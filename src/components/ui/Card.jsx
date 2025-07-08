@@ -1,3 +1,5 @@
+import PropTypes from "prop-types";
+
 const Card = ({ children, className = "", header = null, footer = null, ...props }) => {
   const baseClasses = "bg-white rounded-lg shadow-sm border border-gray-200";
   const classes = `${baseClasses} ${className}`;
@@ -9,6 +11,13 @@ const Card = ({ children, className = "", header = null, footer = null, ...props
       {footer && <div className="px-6 py-4 border-t border-gray-200">{footer}</div>}
     </div>
   );
+};
+
+Card.propTypes = {
+  children: PropTypes.node,
+  className: PropTypes.string,
+  header: PropTypes.node,
+  footer: PropTypes.node,
 };
 
 export default Card;

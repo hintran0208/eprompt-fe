@@ -86,6 +86,59 @@ npm run build
 - `npm run preview` - Preview production build
 - `npm run lint` - Run ESLint
 
+## Deployment
+
+### Vercel Deployment
+
+This project is configured for automatic deployment to Vercel using GitHub Actions.
+
+#### Setup
+
+1. **Create a Vercel account** and link your GitHub repository
+2. **Install Vercel CLI** locally (optional, for manual deployments):
+
+   ```bash
+   npm install -g vercel
+   ```
+
+3. **Configure GitHub Secrets** in your repository settings:
+
+   - `VERCEL_TOKEN`: Your Vercel API token (get it from Vercel dashboard → Settings → Tokens)
+   - `VERCEL_ORG_ID`: Your Vercel organization ID
+   - `VERCEL_PROJECT_ID`: Your Vercel project ID
+
+   To get the organization and project IDs, run locally:
+
+   ```bash
+   vercel link
+   ```
+
+   This will create a `.vercel/project.json` file with the required IDs.
+
+#### Automatic Deployment
+
+- **Production**: Pushes to `main` branch automatically deploy to production
+- **Preview**: Pull requests automatically create preview deployments
+- **Comments**: Deployment URLs are automatically commented on PRs
+
+#### Manual Deployment
+
+```bash
+# Deploy to preview
+vercel
+
+# Deploy to production
+vercel --prod
+```
+
+#### Configuration
+
+The deployment is configured via:
+
+- `.github/workflows/deploy.yml` - GitHub Actions workflow
+- `vercel.json` - Vercel-specific configuration
+- `package.json` - Build commands and dependencies
+
 ## Cross-Platform Development
 
 ### Desktop (Tauri)
