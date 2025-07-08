@@ -15,7 +15,9 @@ const HomePage = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Hero Section */}
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">Welcome to E-Prompt</h1>
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          Welcome to E-Prompt - First Pull Request
+        </h1>
         <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
           Your intelligent prompt management system. Store, organize, and access your AI prompts
           across all platforms - desktop and mobile.
