@@ -85,6 +85,27 @@ npm run build
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build
 - `npm run lint` - Run ESLint
+- `npm run tauri:dev` - Start Tauri development mode
+- `npm run tauri:build` - Build Tauri desktop application
+- `npm run release` - Create a new release (see [RELEASE.md](./RELEASE.md))
+- `npm run release:dry-run` - Preview release changes without making them
+
+## Releases
+
+This project uses automated releases via GitHub Actions. See [RELEASE.md](./RELEASE.md) for detailed instructions on creating releases.
+
+### Quick Release
+
+```bash
+# Create a new release
+npm run release v1.0.0
+
+# Create a pre-release
+npm run release -- --prerelease v1.0.0-beta.1
+
+# Preview what would happen
+npm run release:dry-run v1.0.0
+```
 
 ## Deployment
 

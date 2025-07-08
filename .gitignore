@@ -46,8 +46,10 @@ pids
 *.pid.lock
 
 # Tauri
-/src-tauri/target
+/src-tauri/target/
 /src-tauri/Cargo.lock
+/src-tauri/WixTools/
+/src-tauri/gen/
 
 # Capacitor
 /android
