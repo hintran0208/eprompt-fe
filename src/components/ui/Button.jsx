@@ -1,4 +1,5 @@
 import { forwardRef } from "react";
+import PropTypes from "prop-types";
 
 const Button = forwardRef(
   (
@@ -33,5 +34,13 @@ const Button = forwardRef(
 );
 
 Button.displayName = "Button";
+
+Button.propTypes = {
+  children: PropTypes.node,
+  variant: PropTypes.oneOf(["primary", "secondary", "outline", "ghost", "danger"]),
+  size: PropTypes.oneOf(["sm", "md", "lg"]),
+  disabled: PropTypes.bool,
+  className: PropTypes.string,
+};
 
 export default Button;

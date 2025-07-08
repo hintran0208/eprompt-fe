@@ -3,7 +3,7 @@ import { persist } from "zustand/middleware";
 
 const useUserStore = create(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       isAuthenticated: false,
       theme: "light",
