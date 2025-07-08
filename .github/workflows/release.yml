@@ -23,6 +23,12 @@ on:
     tags:
       - "v*.*.*"
 
+# Required permissions for the workflow
+permissions:
+  contents: write # Required to create releases and push tags
+  pull-requests: write # Required for PR comments (if needed)
+  actions: read # Required to read workflow status
+
 env:
   RUST_BACKTRACE: 1
   CARGO_TERM_COLOR: always
@@ -48,6 +54,7 @@ jobs:
         id: check
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             try {
               const response = await github.rest.repos.getReleaseByTag({
@@ -82,6 +89,7 @@ jobs:
         id: create-release
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const version = '${{ needs.check-release.outputs.version }}';
             let releaseNotes = '';
@@ -251,6 +259,7 @@ jobs:
       - name: Publish release
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             await github.rest.repos.updateRelease({
               owner: context.repo.owner,
@@ -270,6 +279,7 @@ jobs:
         id: release-info
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const { data: release } = await github.rest.repos.getRelease({
               owner: context.repo.owner,
