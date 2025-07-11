@@ -4,6 +4,32 @@ export const cn = (...classes) => {
   return classes.filter(Boolean).join(" ");
 };
 
+export const copyToClipboard = async (text) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (err) {
+    // Fallback for older browsers
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+      const result = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      return result;
+    } catch (err) {
+      document.body.removeChild(textArea);
+      return false;
+    }
+  }
+};
+
 export const formatDate = (date) => {
   if (!date) return "";
 
@@ -28,28 +54,6 @@ export const truncateText = (text, maxLength = 100) => {
 
 export const generateId = () => {
   return Date.now() + Math.random().toString(36).substr(2, 9);
-};
-
-export const copyToClipboard = async (text) => {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch (err) {
-    // Fallback for older browsers
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    try {
-      document.execCommand("copy");
-      return true;
-    } catch (err) {
-      return false;
-    } finally {
-      document.body.removeChild(textArea);
-    }
-  }
 };
 
 export const debounce = (func, wait) => {

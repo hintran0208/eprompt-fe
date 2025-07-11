@@ -1,78 +1,122 @@
-import axios from "axios";
+// API configuration with CORS handling
+const BASE = import.meta.env.DEV ? "/api" : "https://api.eprompt.me";
 
-// Create axios instance with default config
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api",
-  timeout: 10000,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
+async function apiCall(endpoint, options = {}) {
+  const url = `${BASE}${endpoint}`;
+  const config = {
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+    ...options,
+  };
 
-// Request interceptor to add auth token
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("authToken");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
+  // Only add CORS mode in production
+  if (!import.meta.env.DEV) {
+    config.mode = 'cors';
   }
-);
 
-// Response interceptor to handle errors
-api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
-  (error) => {
-    if (error.response?.status === 401) {
-      // Handle unauthorized access
-      localStorage.removeItem("authToken");
-      window.location.href = "/login";
+  try {
+    const response = await fetch(url, config);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch {
+        errorData = { error: errorText || `HTTP ${response.status}: ${response.statusText}` };
+      }
+      throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
     }
-    return Promise.reject(error);
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error(`API call failed for ${endpoint}:`, error);
+    
+    // Provide more helpful error messages for common issues
+    if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+      throw new Error('Unable to connect to the API. Please check your internet connection and try again.');
+    }
+    
+    if (error.message.includes('CORS')) {
+      throw new Error('Network error: Unable to connect to the API due to security restrictions.');
+    }
+    
+    throw error;
   }
-);
+}
 
-// API methods
-export const authAPI = {
-  login: (credentials) => api.post("/auth/login", credentials),
-  register: (userData) => api.post("/auth/register", userData),
-  logout: () => api.post("/auth/logout"),
-  refreshToken: () => api.post("/auth/refresh"),
-  getCurrentUser: () => api.get("/auth/me"),
-};
+export async function generatePrompt(template, input) {
+  const response = await apiCall("/generate", {
+    method: "POST",
+    body: JSON.stringify({
+      template,
+      context: input,
+    }),
+  });
 
-export const promptsAPI = {
-  getAll: (params = {}) => api.get("/prompts", { params }),
-  getById: (id) => api.get(`/prompts/${id}`),
-  create: (promptData) => api.post("/prompts", promptData),
-  update: (id, promptData) => api.put(`/prompts/${id}`, promptData),
-  delete: (id) => api.delete(`/prompts/${id}`),
-  search: (query) => api.get(`/prompts/search`, { params: { q: query } }),
-  getByCategory: (category) => api.get(`/prompts/category/${category}`),
-  getFavorites: () => api.get("/prompts/favorites"),
-  toggleFavorite: (id) => api.post(`/prompts/${id}/favorite`),
-};
+  return response.prompt;
+}
 
-export const categoriesAPI = {
-  getAll: () => api.get("/categories"),
-  create: (categoryData) => api.post("/categories", categoryData),
-  update: (id, categoryData) => api.put(`/categories/${id}`, categoryData),
-  delete: (id) => api.delete(`/categories/${id}`),
-};
+export async function refinePrompt(type, prompt) {
+  const response = await apiCall("/refine/prompt", {
+    method: "POST",
+    body: JSON.stringify({
+      prompt,
+      refinementType: type,
+    }),
+  });
 
-export const userAPI = {
-  getProfile: () => api.get("/user/profile"),
-  updateProfile: (profileData) => api.put("/user/profile", profileData),
-  updatePreferences: (preferences) => api.put("/user/preferences", preferences),
-  exportData: () => api.get("/user/export"),
-  importData: (data) => api.post("/user/import", data),
-  deleteAccount: () => api.delete("/user/account"),
-};
+  return response.refinedPrompt;
+}
 
-export default api;
+export async function generateAIContent(prompt, isRefined = false) {
+  const response = await apiCall("/ai-generate", {
+    method: "POST",
+    body: JSON.stringify({
+      text: prompt,
+      isRefinedPrompt: isRefined,
+    }),
+  });
+
+  return response.result;
+}
+
+export async function refineContent(type, content) {
+  const response = await apiCall("/refine/content", {
+    method: "POST",
+    body: JSON.stringify({
+      content,
+      refinementType: type,
+    }),
+  });
+
+  return response.refinedContent;
+}
+
+export async function getRefineTypes() {
+  const response = await apiCall("/refine/types");
+  
+  return {
+    prompt: response.prompt || { types: [], tools: [] },
+    content: response.content || { types: [], tools: [] },
+  };
+}
+
+export async function searchPrompts(query) {
+  const response = await apiCall("/search", {
+    method: "POST",
+    body: JSON.stringify({
+      query: {
+        text: query,
+      },
+      options: {
+        topK: 10,
+      },
+    }),
+  });
+
+  return response.results || [];
+}
