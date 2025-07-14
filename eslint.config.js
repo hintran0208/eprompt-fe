@@ -30,6 +30,25 @@ export default [
       ...reactHooks.configs.recommended.rules,
       "react/jsx-no-target-blank": "off",
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      "no-useless-escape": "off", // Disable for template files that contain documentation
+    },
+  },
+  {
+    files: ["tailwind.config.js"],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: {
+        ...globals.node, // Add Node.js globals for config files
+        require: "readonly",
+      },
+      parserOptions: {
+        ecmaVersion: "latest",
+        sourceType: "module",
+      },
+    },
+    rules: {
+      ...js.configs.recommended.rules,
+      "no-undef": "off", // Allow require in config files
     },
   },
 ];
