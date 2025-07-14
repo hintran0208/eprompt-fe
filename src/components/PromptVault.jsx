@@ -1,7 +1,5 @@
-import React from 'react';
 import { usePlaygroundStore } from '../store/playgroundStore';
-import Card from './ui/Card';
-import Button from './ui/Button';
+import { Button, Card } from './ui';
 
 const PromptVault = () => {
   const { sessions, loadSession, deleteSession, currentTemplate } = usePlaygroundStore();

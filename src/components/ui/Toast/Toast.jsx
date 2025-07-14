@@ -1,14 +1,6 @@
-import React, { createContext, useContext, useState } from 'react';
-
-const ToastContext = createContext();
-
-export const useToast = () => {
-  const context = useContext(ToastContext);
-  if (!context) {
-    throw new Error('useToast must be used within a ToastProvider');
-  }
-  return context;
-};
+import { useState } from 'react';
+import PropTypes from 'prop-types';
+import ToastContext from './ToastContext'; 
 
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
@@ -96,6 +88,29 @@ const Toast = ({ toast, onRemove }) => {
       </button>
     </div>
   );
+};
+
+// PropTypes assignments (after component definitions)
+Toast.propTypes = {
+  toast: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    type: PropTypes.string.isRequired,
+    message: PropTypes.string.isRequired,
+  }).isRequired,
+  onRemove: PropTypes.func.isRequired,
+};
+
+ToastContainer.propTypes = {
+  toasts: PropTypes.arrayOf(PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    type: PropTypes.string.isRequired,
+    message: PropTypes.string.isRequired,
+  })).isRequired,
+  removeToast: PropTypes.func.isRequired,
+};
+
+ToastProvider.propTypes = {
+  children: PropTypes.node.isRequired,
 };
 
 export default ToastProvider;

@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
-import { useToast } from './ui/Toast';
-import Button from './ui/Button';
-import Input from './ui/Input';
+import { useState } from 'react';
+import { useToast } from '../hooks';
+import { Button, Input } from './ui';
 
 const SemanticSearch = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -63,7 +62,7 @@ const SemanticSearch = () => {
         </div>
         
         <div className="mt-2 text-xs text-gray-500">
-          Try searching for "content writing", "code review", or "email templates"
+          Try searching for &quot;content writing&quot;, &quot;code review&quot;, or &quot;email templates&quot;
         </div>
       </div>
     </div>

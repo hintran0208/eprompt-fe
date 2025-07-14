@@ -1,16 +1,14 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import SemanticSearch from '../components/SemanticSearch';
 import TemplateLibrary from '../components/TemplateLibrary';
 import Playground from '../components/Playground';
 import PromptVault from '../components/PromptVault';
 import { usePlaygroundStore } from '../store/playgroundStore';
-import { useToast } from '../components/ui/Toast';
-import Button from '../components/ui/Button';
+import { Button } from '../components/ui';
 
 const AppLayout = () => {
   const [currentView, setCurrentView] = useState('templates');
   const { currentTemplate, clearCurrentSession } = usePlaygroundStore();
-  const toast = useToast();
 
   const handleNewSession = () => {
     clearCurrentSession();

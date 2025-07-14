@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
+
 import { getRefineTypes } from '../lib/api';
-import Button from './ui/Button';
 
 const RefineToolbar = ({ onRefine, isLoading, mode }) => {
   const [tools, setTools] = useState([]);
@@ -92,6 +93,12 @@ const RefineToolbar = ({ onRefine, isLoading, mode }) => {
       )}
     </div>
   );
+};
+
+RefineToolbar.propTypes = {
+  onRefine: PropTypes.func.isRequired,
+  isLoading: PropTypes.bool.isRequired,
+  mode: PropTypes.string.isRequired,
 };
 
 export default RefineToolbar;

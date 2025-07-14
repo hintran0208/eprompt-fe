@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import SemanticSearch from '../components/SemanticSearch';
 
 const AppLayoutMinimal = () => {
@@ -63,7 +63,7 @@ const AppLayoutMinimal = () => {
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Current View: {currentView}</h2>
-          <p className="text-gray-600">Minimal layout is working! Now we'll add components step by step.</p>
+          <p className="text-gray-600">Minimal layout is working! Now we&apos;ll add components step by step.</p>
         </div>
       </main>
     </div>

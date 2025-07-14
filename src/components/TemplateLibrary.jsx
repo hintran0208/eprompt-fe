@@ -1,8 +1,6 @@
-import React from 'react';
 import { TEMPLATE_LIBRARY } from '../data/templates';
 import { usePlaygroundStore } from '../store/playgroundStore';
-import Card from './ui/Card';
-import Button from './ui/Button';
+import { Button, Card } from './ui';
 
 const TemplateLibrary = () => {
   const { setCurrentTemplate, currentTemplate } = usePlaygroundStore();
