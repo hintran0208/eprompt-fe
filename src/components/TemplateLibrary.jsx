@@ -22,8 +22,7 @@ const TemplateLibrary = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {TEMPLATE_LIBRARY.map((template) => (
-          <Card key={template.id} className="p-6 hover:shadow-lg transition-shadow">
-            <div className="space-y-4">
+          <Card key={template.id} className="p-6 hover:shadow-lg transition-shadow">            <div className="space-y-4">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
                   {template.name}
@@ -34,13 +33,19 @@ const TemplateLibrary = () => {
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-blue-600 bg-blue-100 px-2 py-1 rounded">
-                    {template.role}
-                  </span>
-                  <span className="text-xs font-medium text-green-600 bg-green-100 px-2 py-1 rounded">
-                    {template.useCase}
-                  </span>
+                <div className="flex items-center gap-1 flex-wrap">
+                  {template.tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="text-xs font-medium text-blue-600 bg-blue-100 px-2 py-1 rounded"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="text-xs text-gray-500">
+                  <span className="font-medium">Role:</span> {template.role}
                 </div>
 
                 <div className="text-xs text-gray-500">
@@ -54,7 +59,7 @@ const TemplateLibrary = () => {
                     {template.optionalFields.join(', ')}
                   </div>
                 )}
-              </div>              <Button
+              </div><Button
                 onClick={() => handleSelectTemplate(template)}
                 variant={currentTemplate?.id === template.id ? 'primary' : 'outline'}
                 className="w-full"

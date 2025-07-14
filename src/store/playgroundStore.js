@@ -68,9 +68,7 @@ export const usePlaygroundStore = create()(
       loadSession: (sessionId) => {
         const state = get();
         const session = state.sessions.find(s => s.id === sessionId);
-        if (!session) return;
-
-        // We need to reconstruct the template from stored data
+        if (!session) return;        // We need to reconstruct the template from stored data
         // For now, we'll create a minimal template object
         const template = {
           id: session.templateId,
@@ -78,7 +76,7 @@ export const usePlaygroundStore = create()(
           description: `Loaded session: ${session.templateName}`,
           template: '',
           role: 'Assistant',
-          useCase: 'Loaded',
+          tags: ['Session', 'Loaded'],
           requiredFields: Object.keys(session.input),
         };
 
