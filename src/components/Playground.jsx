@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { usePlaygroundStore } from '../store/playgroundStore';
 import { generatePrompt, refinePrompt, generateAIContent, refineContent } from '../lib/api';
 import { copyToClipboard } from '../lib/utils';
 import { useToast } from './ui/Toast';
 import Button from './ui/Button';
 import Input from './ui/Input';
+import Textarea from './ui/Textarea';
 import Card from './ui/Card';
 import RefineToolbar from './RefineToolbar';
 
@@ -27,7 +29,172 @@ const Playground = () => {
   } = usePlaygroundStore();
 
   const [formErrors, setFormErrors] = useState({});
+  const [editablePrompt, setEditablePrompt] = useState('');
+  const [editableRefinedPrompt, setEditableRefinedPrompt] = useState('');
+  const [editableContent, setEditableContent] = useState('');
+  const [isEditingPrompt, setIsEditingPrompt] = useState(false);
+  const [isEditingRefinedPrompt, setIsEditingRefinedPrompt] = useState(false);
+  const [isEditingContent, setIsEditingContent] = useState(false);
+  const [showMarkdownPreview, setShowMarkdownPreview] = useState(false);
   const toast = useToast();
+
+  // Sync editable states with store values
+  useEffect(() => {
+    if (generatedPrompt && !isEditingPrompt) {
+      setEditablePrompt(generatedPrompt);
+    }
+  }, [generatedPrompt, isEditingPrompt]);
+
+  useEffect(() => {
+    if (refinedPrompt && !isEditingRefinedPrompt) {
+      setEditableRefinedPrompt(refinedPrompt);
+    }
+  }, [refinedPrompt, isEditingRefinedPrompt]);
+
+  useEffect(() => {
+    if (generatedContent && !isEditingContent) {
+      setEditableContent(generatedContent);
+    }
+  }, [generatedContent, isEditingContent]);
+
+  const handleSaveEdits = (type) => {
+    switch (type) {
+      case 'prompt':
+        setGeneratedPrompt(editablePrompt);
+        setIsEditingPrompt(false);
+        break;
+      case 'refinedPrompt':
+        setRefinedPrompt(editableRefinedPrompt);
+        setIsEditingRefinedPrompt(false);
+        break;
+      case 'content':
+        setGeneratedContent(editableContent);
+        setIsEditingContent(false);
+        break;
+    }
+    saveCurrentSession();
+    toast.success('Changes saved successfully!');
+  };
+
+  const handleDiscardEdits = (type) => {
+    switch (type) {
+      case 'prompt':
+        setEditablePrompt(generatedPrompt);
+        setIsEditingPrompt(false);
+        break;
+      case 'refinedPrompt':
+        setEditableRefinedPrompt(refinedPrompt);
+        setIsEditingRefinedPrompt(false);
+        break;
+      case 'content':
+        setEditableContent(generatedContent);
+        setIsEditingContent(false);
+        break;
+    }
+  };
+
+  const renderEditableContent = (content, editableContentValue, isEditing, setIsEditing, onSave, onDiscard, type, bgColor = 'bg-gray-50') => (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-gray-900">
+          {type === 'prompt' ? 'Generated Prompt' : 
+           type === 'refinedPrompt' ? 'Refined Prompt' : 'Generated Content'}
+          {isEditing && <span className="ml-2 text-sm text-blue-600 font-normal">(Editing)</span>}
+        </h3>
+        <div className="flex items-center space-x-2">
+          {!isEditing && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowMarkdownPreview(!showMarkdownPreview)}
+              className="flex items-center"
+            >
+              <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              {showMarkdownPreview ? 'Raw' : 'Markdown'}
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsEditing(!isEditing)}
+            className="flex items-center"
+          >
+            <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              {isEditing ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              )}
+            </svg>
+            {isEditing ? 'Cancel' : 'Edit'}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleCopy(content, type, isEditing, editableContentValue)}
+            className="flex items-center"
+          >
+            <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            Copy
+          </Button>
+        </div>
+      </div>
+      
+      <Card className={`p-4 ${bgColor}`}>
+        {isEditing ? (
+          <div className="space-y-3">
+            <Textarea
+              value={editableContentValue}
+              onChange={(e) => {
+                switch (type) {
+                  case 'prompt':
+                    setEditablePrompt(e.target.value);
+                    break;
+                  case 'refinedPrompt':
+                    setEditableRefinedPrompt(e.target.value);
+                    break;
+                  case 'content':
+                    setEditableContent(e.target.value);
+                    break;
+                }
+              }}
+              rows={type === 'content' ? 16 : 12}
+              className="font-mono text-sm bg-white"
+              placeholder={`Edit your ${type === 'refinedPrompt' ? 'refined prompt' : type} here...`}
+            />
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onDiscard(type)}
+              >
+                Discard
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => onSave(type)}
+              >
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        ) : showMarkdownPreview ? (
+          <div className="prose prose-sm max-w-none text-gray-700 max-h-96 overflow-y-auto">
+            <ReactMarkdown>{content}</ReactMarkdown>
+          </div>
+        ) : (
+          <pre className="whitespace-pre-wrap text-sm text-gray-700 max-h-96 overflow-y-auto">
+            {content}
+          </pre>
+        )}
+      </Card>
+    </div>
+  );
 
   const handleInputChange = (field, value) => {
     setCurrentInput({ ...currentInput, [field]: value });
@@ -36,8 +203,9 @@ const Playground = () => {
     }
   };
 
-  const handleCopy = async (text, type) => {
-    const success = await copyToClipboard(text);
+  const handleCopy = async (text, type, isEditing = false, editableText = '') => {
+    const textToCopy = isEditing ? editableText : text;
+    const success = await copyToClipboard(textToCopy);
     if (success) {
       toast.success(`${type} copied to clipboard!`);
     } else {
@@ -58,13 +226,16 @@ const Playground = () => {
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
-  };  const handleGeneratePrompt = async () => {
+  };
+
+  const handleGeneratePrompt = async () => {
     if (!currentTemplate || !validateForm()) return;
 
     setIsLoading(true);
     try {
       const prompt = await generatePrompt(currentTemplate, currentInput);
       setGeneratedPrompt(prompt);
+      setEditablePrompt(prompt);
       saveCurrentSession();
       toast.success('Prompt generated successfully!');
     } catch (error) {
@@ -76,12 +247,14 @@ const Playground = () => {
   };
 
   const handleRefinePrompt = async (type) => {
-    if (!generatedPrompt) return;
+    const promptToRefine = isEditingPrompt ? editablePrompt : generatedPrompt;
+    if (!promptToRefine) return;
 
     setIsLoading(true);
     try {
-      const refined = await refinePrompt(type, generatedPrompt);
+      const refined = await refinePrompt(type, promptToRefine);
       setRefinedPrompt(refined);
+      setEditableRefinedPrompt(refined);
       saveCurrentSession();
       toast.success('Prompt refined successfully!');
     } catch (error) {
@@ -93,12 +266,14 @@ const Playground = () => {
   };
 
   const handleRefineRefinedPrompt = async (type) => {
-    if (!refinedPrompt) return;
+    const promptToRefine = isEditingRefinedPrompt ? editableRefinedPrompt : refinedPrompt;
+    if (!promptToRefine) return;
 
     setIsLoading(true);
     try {
-      const refined = await refinePrompt(type, refinedPrompt);
+      const refined = await refinePrompt(type, promptToRefine);
       setRefinedPrompt(refined);
+      setEditableRefinedPrompt(refined);
       saveCurrentSession();
       toast.success('Prompt refined successfully!');
     } catch (error) {
@@ -108,14 +283,22 @@ const Playground = () => {
       setIsLoading(false);
     }
   };
+
   const handleGenerateContent = async (useRefinedPrompt = false) => {
-    const promptToUse = useRefinedPrompt && refinedPrompt ? refinedPrompt : generatedPrompt;
+    let promptToUse;
+    if (useRefinedPrompt) {
+      promptToUse = isEditingRefinedPrompt ? editableRefinedPrompt : refinedPrompt;
+    } else {
+      promptToUse = isEditingPrompt ? editablePrompt : generatedPrompt;
+    }
+    
     if (!promptToUse) return;
 
     setIsLoading(true);
     try {
       const content = await generateAIContent(promptToUse, useRefinedPrompt);
       setGeneratedContent(content);
+      setEditableContent(content);
       saveCurrentSession();
       toast.success(`Content generated successfully from ${useRefinedPrompt ? 'refined' : 'basic'} prompt!`);
     } catch (error) {
@@ -127,12 +310,14 @@ const Playground = () => {
   };
 
   const handleRefineContent = async (type) => {
-    if (!generatedContent) return;
+    const contentToRefine = isEditingContent ? editableContent : generatedContent;
+    if (!contentToRefine) return;
 
     setIsLoading(true);
     try {
-      const refined = await refineContent(type, generatedContent);
+      const refined = await refineContent(type, contentToRefine);
       setGeneratedContent(refined);
+      setEditableContent(refined);
       saveCurrentSession();
       toast.success('Content refined successfully!');
     } catch (error) {
@@ -184,29 +369,21 @@ const Playground = () => {
       </Button>
     </div>
   );
+
   const renderPrompt = () => (
     <div className="space-y-6">
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Generated Prompt</h3>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleCopy(generatedPrompt, 'Prompt')}
-            className="flex items-center"
-          >
-            <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-            Copy
-          </Button>
-        </div>
-        <Card className="p-4 bg-gray-50">
-          <pre className="whitespace-pre-wrap text-sm text-gray-700 max-h-96 overflow-y-auto">
-            {generatedPrompt}
-          </pre>
-        </Card>
-      </div>      <RefineToolbar
+      {renderEditableContent(
+        generatedPrompt,
+        editablePrompt,
+        isEditingPrompt,
+        setIsEditingPrompt,
+        handleSaveEdits,
+        handleDiscardEdits,
+        'prompt',
+        'bg-gray-50'
+      )}
+
+      <RefineToolbar
         onRefine={handleRefinePrompt}
         isLoading={isLoading}
         mode="prompt"
@@ -224,28 +401,19 @@ const Playground = () => {
       </div>
     </div>
   );
+
   const renderRefinedPrompt = () => (
     <div className="space-y-6">
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Refined Prompt</h3>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleCopy(refinedPrompt, 'Refined Prompt')}
-            className="flex items-center"
-          >
-            <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-            Copy
-          </Button>
-        </div>
-        <Card className="p-4 bg-green-50">
-          <pre className="whitespace-pre-wrap text-sm text-gray-700 max-h-96 overflow-y-auto">
-            {refinedPrompt}
-          </pre>        </Card>
-      </div>
+      {renderEditableContent(
+        refinedPrompt,
+        editableRefinedPrompt,
+        isEditingRefinedPrompt,
+        setIsEditingRefinedPrompt,
+        handleSaveEdits,
+        handleDiscardEdits,
+        'refinedPrompt',
+        'bg-green-50'
+      )}
 
       <RefineToolbar
         onRefine={handleRefineRefinedPrompt}
@@ -265,30 +433,19 @@ const Playground = () => {
       </div>
     </div>
   );
-  
+
   const renderContent = () => (
     <div className="space-y-6">
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Generated Content</h3>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleCopy(generatedContent, 'Content')}
-            className="flex items-center"
-          >
-            <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-            Copy
-          </Button>
-        </div>
-        <Card className="p-4 bg-blue-50">
-          <div className="text-sm text-gray-700 max-h-96 overflow-y-auto">
-            {generatedContent}
-          </div>
-        </Card>
-      </div>
+      {renderEditableContent(
+        generatedContent,
+        editableContent,
+        isEditingContent,
+        setIsEditingContent,
+        handleSaveEdits,
+        handleDiscardEdits,
+        'content',
+        'bg-blue-50'
+      )}
 
       <RefineToolbar
         onRefine={handleRefineContent}
@@ -331,6 +488,7 @@ const Playground = () => {
       </div>
     );
   };
+
   if (!currentTemplate) {
     return (
       <Card className="p-8 text-center">
@@ -371,7 +529,9 @@ const Playground = () => {
                 <span>Generate content from your refined prompt</span>
               </div>
             </div>
-          </div>          <div className="mt-6">
+          </div>
+
+          <div className="mt-6">
             <p className="text-sm text-gray-500">
               Go to the Templates section to choose a template and get started
             </p>

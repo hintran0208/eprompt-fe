@@ -1613,7 +1613,7 @@ High Findings:
 
 #### Critical Priority
 1. **Patch SQL Injection Vulnerability**
-   - **Location**: `/api/search` endpoint
+   - **Location**: \`/api/search/\` endpoint
    - **Solution**: Implement parameterized queries
    - **Effort**: 2 days
    - **Risk Reduction**: High
