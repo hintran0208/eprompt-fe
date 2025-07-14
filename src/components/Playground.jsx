@@ -2,10 +2,8 @@ import { useState } from 'react';
 import { usePlaygroundStore } from '../store/playgroundStore';
 import { generatePrompt, refinePrompt, generateAIContent, refineContent } from '../lib/api';
 import { copyToClipboard } from '../lib/utils';
-import { useToast } from './ui/Toast';
-import Button from './ui/Button';
-import Input from './ui/Input';
-import Card from './ui/Card';
+import { Button, Card, Input } from './ui';
+import { useToast } from '../hooks';
 import RefineToolbar from './RefineToolbar';
 
 const Playground = () => {

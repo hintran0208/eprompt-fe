@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { useToast } from './ui/Toast';
-import Button from './ui/Button';
-import Input from './ui/Input';
+import { useToast } from '../hooks';
+import { Button, Input } from './ui';
 
 const SemanticSearch = () => {
   const [searchQuery, setSearchQuery] = useState('');

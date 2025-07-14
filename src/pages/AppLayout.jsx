@@ -4,7 +4,7 @@ import TemplateLibrary from '../components/TemplateLibrary';
 import Playground from '../components/Playground';
 import PromptVault from '../components/PromptVault';
 import { usePlaygroundStore } from '../store/playgroundStore';
-import Button from '../components/ui/Button';
+import { Button } from '../components/ui';
 
 const AppLayout = () => {
   const [currentView, setCurrentView] = useState('templates');

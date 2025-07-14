@@ -1,15 +1,6 @@
-import { createContext, useContext, useState } from 'react';
+import { useState } from 'react';
 import PropTypes from 'prop-types';
-
-const ToastContext = createContext();
-
-export const useToast = () => {
-  const context = useContext(ToastContext);
-  if (!context) {
-    throw new Error('useToast must be used within a ToastProvider');
-  }
-  return context;
-};
+import ToastContext from './ToastContext'; 
 
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);

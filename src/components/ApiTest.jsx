@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { getRefineTypes, generatePrompt } from '../lib/api';
-import Button from './ui/Button';
-import Card from './ui/Card';
+import { Button, Card } from './ui';
 
 const ApiTest = () => {
   const [results, setResults] = useState('');

@@ -118,3 +118,5 @@ export const useOnClickOutside = (ref, handler) => {
     };
   }, [ref, handler]);
 };
+
+export { default as useToast } from "./useToast";
