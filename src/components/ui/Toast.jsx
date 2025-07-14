@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState } from 'react';
+import PropTypes from 'prop-types';
 
 const ToastContext = createContext();
 
@@ -96,6 +97,29 @@ const Toast = ({ toast, onRemove }) => {
       </button>
     </div>
   );
+};
+
+// PropTypes assignments (after component definitions)
+Toast.propTypes = {
+  toast: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    type: PropTypes.string.isRequired,
+    message: PropTypes.string.isRequired,
+  }).isRequired,
+  onRemove: PropTypes.func.isRequired,
+};
+
+ToastContainer.propTypes = {
+  toasts: PropTypes.arrayOf(PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    type: PropTypes.string.isRequired,
+    message: PropTypes.string.isRequired,
+  })).isRequired,
+  removeToast: PropTypes.func.isRequired,
+};
+
+ToastProvider.propTypes = {
+  children: PropTypes.node.isRequired,
 };
 
 export default ToastProvider;

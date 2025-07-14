@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { getRefineTypes, generatePrompt } from '../lib/api';
 import Button from './ui/Button';
 import Card from './ui/Card';

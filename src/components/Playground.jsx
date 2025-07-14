@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { usePlaygroundStore } from '../store/playgroundStore';
 import { generatePrompt, refinePrompt, generateAIContent, refineContent } from '../lib/api';
 import { copyToClipboard } from '../lib/utils';

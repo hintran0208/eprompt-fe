@@ -1,4 +1,3 @@
-import React from 'react';
 import { TEMPLATE_LIBRARY } from '../data/templates';
 import { usePlaygroundStore } from '../store/playgroundStore';
 import Card from './ui/Card';
