@@ -1,8 +1,7 @@
 import { Link } from "react-router-dom";
 import usePromptStore from "../store/promptStore";
 import useUserStore from "../store/userStore";
-import Card from "../components/ui/Card";
-import Button from "../components/ui/Button";
+import { Button, Card } from "../components/ui";
 
 const HomePage = () => {
   const { prompts, getFavoritePrompts } = usePromptStore();

@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
+
+import { Button } from "../ui";
 import useUserStore from "../../store/userStore";
-import Button from "../ui/Button";
 
 const Navbar = () => {
   const location = useLocation();

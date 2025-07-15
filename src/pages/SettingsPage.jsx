@@ -1,8 +1,6 @@
 import { useState } from "react";
 import useUserStore from "../store/userStore";
-import Card from "../components/ui/Card";
-import Input from "../components/ui/Input";
-import Button from "../components/ui/Button";
+import { Button, Card, Input } from "../components/ui";
 
 const SettingsPage = () => {
   const { user, theme, preferences, updateUser, toggleTheme, updatePreferences } = useUserStore();

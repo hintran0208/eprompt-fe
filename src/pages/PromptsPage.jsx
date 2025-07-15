@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import usePromptStore from "../store/promptStore";
-import Card from "../components/ui/Card";
-import Input from "../components/ui/Input";
-import Button from "../components/ui/Button";
+import { Button, Card, Input } from "../components/ui";
 
 const PromptsPage = () => {
   const [searchParams] = useSearchParams();

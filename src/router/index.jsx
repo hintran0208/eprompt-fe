@@ -4,10 +4,15 @@ import SimpleLayout from "../components/layout/SimpleLayout";
 import HomePage from "../pages/HomePage";
 import PromptsPage from "../pages/PromptsPage";
 import SettingsPage from "../pages/SettingsPage";
+import AppLayout from "../pages/AppLayout";
 
 const router = createBrowserRouter([
   {
     path: "/",
+    element: <AppLayout />,
+  },
+  {
+    path: "/home",
     element: <SimpleLayout />,
     children: [
       {
