@@ -48,6 +48,10 @@ async function apiCall(endpoint, options = {}) {
   }
 }
 
+export async function getAllTemplates() {
+  return await apiCall("/template/all");
+}
+
 export async function generatePrompt(template, input) {
   const response = await apiCall("/generate", {
     method: "POST",

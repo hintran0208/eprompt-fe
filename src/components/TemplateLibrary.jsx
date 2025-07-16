@@ -1,9 +1,29 @@
-import { TEMPLATE_LIBRARY } from '../data/templates';
+import { useEffect, useState } from 'react';
 import { usePlaygroundStore } from '../store/playgroundStore';
 import { Button, Card } from './ui';
+import { getAllTemplates } from '../lib/api';
+import { useToast } from '../hooks';
+
 
 const TemplateLibrary = () => {
   const { setCurrentTemplate, currentTemplate } = usePlaygroundStore();
+  const [templates, setTemplates] = useState([]);
+  const toast = useToast();
+
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        const data = await getAllTemplates();
+        console.log('Fetched templates:', data);
+        setTemplates(data);
+        toast.success('Successfully got all templates from database');
+      } catch (err) {
+        toast.error(`Failed to load templates: ${err.message}`);
+      }
+    };
+    fetchTemplates();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSelectTemplate = (template) => {
     setCurrentTemplate(template);
@@ -19,8 +39,9 @@ const TemplateLibrary = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {TEMPLATE_LIBRARY.map((template) => (
-          <Card key={template.id} className="p-6 hover:shadow-lg transition-shadow">            <div className="space-y-4">
+        {templates.map((template) => (
+          <Card key={template.id} className="p-6 hover:shadow-lg transition-shadow">
+            <div className="space-y-4">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
                   {template.name}
@@ -57,7 +78,8 @@ const TemplateLibrary = () => {
                     {template.optionalFields.join(', ')}
                   </div>
                 )}
-              </div><Button
+              </div>
+              <Button
                 onClick={() => handleSelectTemplate(template)}
                 variant={currentTemplate?.id === template.id ? 'primary' : 'outline'}
                 className="w-full"
