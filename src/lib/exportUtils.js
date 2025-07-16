@@ -1,6 +1,5 @@
 import jsPDF from 'jspdf';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
-import { marked } from 'marked';
 
 /**
  * Export content to different file formats
@@ -74,7 +73,7 @@ export const exportToPdf = (content, filename = 'export.pdf', options = {}) => {
 
       const wrappedLines = doc.splitTextToSize(lineObj.text || ' ', maxLineWidth);
       
-      wrappedLines.forEach((wrappedLine, index) => {
+      wrappedLines.forEach((wrappedLine) => {
         if (yPosition > maxYPosition) {
           doc.addPage();
           yPosition = margin;
@@ -232,7 +231,6 @@ export const exportToDoc = async (content, filename = 'export.docx', options = {
       
       // Simple regex patterns for inline formatting
       const boldPattern = /\*\*(.*?)\*\*/g;
-      const italicPattern = /\*(.*?)\*/g;
       
       let lastIndex = 0;
       let match;

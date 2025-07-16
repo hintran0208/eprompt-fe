@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Button, Card } from './index';
+import PropTypes from 'prop-types';
+import { Button } from './index';
 
 const ExportModal = ({ isOpen, onClose, onExport, availableContent, preSelectedContent = null }) => {
   const [selectedFormat, setSelectedFormat] = useState('txt');
@@ -277,6 +278,22 @@ const ExportModal = ({ isOpen, onClose, onExport, availableContent, preSelectedC
       </div>
     </div>
   );
+};
+
+ExportModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onExport: PropTypes.func.isRequired,
+  availableContent: PropTypes.shape({
+    basicPrompt: PropTypes.string,
+    refinedPrompt: PropTypes.string,
+    generatedContent: PropTypes.string,
+  }).isRequired,
+  preSelectedContent: PropTypes.shape({
+    basicPrompt: PropTypes.string,
+    refinedPrompt: PropTypes.string,
+    generatedContent: PropTypes.string,
+  }),
 };
 
 export default ExportModal;
