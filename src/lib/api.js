@@ -1,4 +1,5 @@
-// API configuration with CORS handling
+import { fetch } from '@tauri-apps/plugin-http';
+
 const BASE = import.meta.env.DEV ? "/api" : "https://api.eprompt.me";
 
 async function apiCall(endpoint, options = {}) {
