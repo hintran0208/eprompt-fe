@@ -3,7 +3,8 @@ import ReactMarkdown from 'react-markdown';
 import { usePlaygroundStore } from '../store/playgroundStore';
 import { generatePrompt, refinePrompt, generateAIContent, refineContent } from '../lib/api';
 import { copyToClipboard } from '../lib/utils';
-import { Button, Card, Input, Textarea } from './ui';
+import { exportAllContent } from '../lib/exportUtils';
+import { Button, Card, Input, Textarea, ExportModal } from './ui';
 import { useToast } from '../hooks';
 import RefineToolbar from './RefineToolbar';
 
@@ -33,6 +34,7 @@ const Playground = () => {
   const [isEditingRefinedPrompt, setIsEditingRefinedPrompt] = useState(false);
   const [isEditingContent, setIsEditingContent] = useState(false);
   const [showMarkdownPreview, setShowMarkdownPreview] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
   const toast = useToast();
 
   // Sync editable states with store values
@@ -137,6 +139,20 @@ const Playground = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
             Copy
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const contentToExport = isEditing ? editableContentValue : content;
+              handleIndividualExport(type, contentToExport);
+            }}
+            className="flex items-center"
+          >
+            <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Export
           </Button>
         </div>
       </div>
@@ -323,6 +339,50 @@ const Playground = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleExport = async (dataToExport, fileType, options = {}) => {
+    try {
+      await exportAllContent(dataToExport, fileType, options);
+      const formatText = options.enableMarkdown ? `formatted ${fileType.toUpperCase()}` : fileType.toUpperCase();
+      toast.success(`Content exported successfully as ${formatText}!`);
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast.error('Failed to export content. Please try again.');
+    }
+  };
+
+  const [preSelectedExportContent, setPreSelectedExportContent] = useState(null);
+
+  const handleIndividualExport = (contentType, content) => {
+    const exportData = {};
+    
+    // Map the content type to the correct key
+    switch (contentType) {
+      case 'prompt':
+        exportData.basicPrompt = content;
+        break;
+      case 'refinedPrompt':
+        exportData.refinedPrompt = content;
+        break;
+      case 'content':
+        exportData.generatedContent = content;
+        break;
+      default:
+        exportData[contentType] = content;
+    }
+    
+    // Pre-select this content in the modal
+    setPreSelectedExportContent(exportData);
+    setShowExportModal(true);
+  };
+
+  const getAvailableExportContent = () => {
+    return {
+      basicPrompt: isEditingPrompt ? editablePrompt : generatedPrompt,
+      refinedPrompt: isEditingRefinedPrompt ? editableRefinedPrompt : refinedPrompt,
+      generatedContent: isEditingContent ? editableContent : generatedContent,
+    };
   };
 
   const renderForm = () => (
@@ -540,11 +600,27 @@ const Playground = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Playground</h2>
-        <p className="text-gray-600">
-          Generate and refine prompts using the selected template
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Playground</h2>
+          <p className="text-gray-600">
+            Generate and refine prompts using the selected template
+          </p>
+        </div>
+        
+        {/* Export Button - Show only if there's content to export */}
+        {(generatedPrompt || refinedPrompt || generatedContent) && (
+          <Button
+            variant="outline"
+            onClick={() => setShowExportModal(true)}
+            className="flex items-center"
+          >
+            <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Export Content
+          </Button>
+        )}
       </div>
 
       <Card className="p-6">
@@ -557,6 +633,18 @@ const Playground = () => {
           {activeTab === 'content' && renderContent()}
         </div>
       </Card>
+
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => {
+          setShowExportModal(false);
+          setPreSelectedExportContent(null);
+        }}
+        onExport={handleExport}
+        availableContent={getAvailableExportContent()}
+        preSelectedContent={preSelectedExportContent}
+      />
     </div>
   );
 };

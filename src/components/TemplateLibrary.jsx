@@ -14,7 +14,6 @@ const TemplateLibrary = () => {
     const fetchTemplates = async () => {
       try {
         const data = await getAllTemplates();
-        console.log('Fetched templates:', data);
         setTemplates(data);
         toast.success('Successfully got all templates from database');
       } catch (err) {
