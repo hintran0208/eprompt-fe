@@ -113,14 +113,10 @@ export async function searchPrompts(query) {
   const response = await apiCall("/search", {
     method: "POST",
     body: JSON.stringify({
-      query: {
-        text: query,
-      },
-      options: {
-        topK: 10,
-      },
+      query: query,
+      limit: 5, 
     }),
   });
 
-  return response.results || [];
+  return response || [];
 }
