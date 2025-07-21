@@ -76,7 +76,8 @@ const AppLayout = () => {
         </div>
       </div>
     </div>
-  );  const renderContent = () => {
+  );  
+  const renderContent = () => {
     switch (currentView) {
       case 'templates':
         return <TemplateLibrary />;
@@ -86,10 +87,10 @@ const AppLayout = () => {
         return <PromptVault />;
       default:
         return <TemplateLibrary />;
-    }
+  }
   };return (
     <div className="min-h-screen bg-gray-50">
-      <SemanticSearch />
+      <SemanticSearch setCurrentView={setCurrentView}/>
       {renderNavigation()}
       
       <main className="max-w-7xl mx-auto px-4 py-8">

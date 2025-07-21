@@ -1,23 +1,33 @@
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 import { useToast } from '../hooks';
 import { Button, Input } from './ui';
+import { searchPrompts } from '../lib/api'; 
+import { usePlaygroundStore } from '../store/playgroundStore';
 
-const SemanticSearch = () => {
+const SemanticSearch = ({ setCurrentView }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState(null);
+
+  const { setCurrentTemplate } = usePlaygroundStore();
+
   const toast = useToast();
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
-
     setIsSearching(true);
     
-    // Simulate search delay
-    setTimeout(() => {
-      setIsSearching(false);
+    try {
+      // Call the search API with the query 
+      const response = await searchPrompts(searchQuery); console.log('API Response:', response);
+      setSearchResults(response);
+    } catch (error) {
+      console.error('Error during search:', error);
       // Show placeholder message using toast
-      toast.info('🔍 Semantic search coming soon! This feature will allow you to search through prompts and templates using natural language.', 6000);
-    }, 1000);
+      toast.error('Error during search', 6000);
+    }
+    setIsSearching(false);
   };
 
   const handleKeyPress = (e) => {
@@ -26,6 +36,49 @@ const SemanticSearch = () => {
       handleSearch();
     }
   };
+
+  const handleSelectSearchResult = (result) => {
+      setSearchQuery('');
+      setCurrentTemplate(result);
+      setSearchResults(null);
+      setCurrentView('playground');
+  }
+
+  const renderSearchResults = () => (
+      searchResults.length > 0 ? (
+        <div className="absolute mt-2 bg-white border border-gray-300 rounded shadow-md z-50 w-full max-w-4xl">
+          <ul className="max-h-60 overflow-y-auto">
+            {searchResults.map((result, index) => (
+              <li
+                key={index}
+                className="p-2 hover:bg-gray-100 cursor-pointer border-b border-gray-200"
+                onClick={() => handleSelectSearchResult(result)}
+              >
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-base">{result.name}</span>
+                    <span className="bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded">
+                      {result.role}
+                    </span>
+                    {result.tags && result.tags.map((tag, tagIndex) => (
+                      <span
+                        key={tagIndex}
+                        className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1">{result.description}</div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <div className="absolute mt-2 bg-white border border-gray-300 rounded shadow-md z-50 w-full max-w-4xl p-4 text-gray-500 text-center">
+          No results found.
+        </div>
+      )
+  )
 
   return (
     <div className="bg-white border-b border-gray-200 p-4">
@@ -60,13 +113,16 @@ const SemanticSearch = () => {
             )}
           </Button>
         </div>
-        
+        {searchResults && renderSearchResults()}
         <div className="mt-2 text-xs text-gray-500">
           Try searching for &quot;content writing&quot;, &quot;code review&quot;, or &quot;email templates&quot;
         </div>
       </div>
     </div>
   );
+};
+SemanticSearch.propTypes = {
+  setCurrentView: PropTypes.func.isRequired,
 };
 
 export default SemanticSearch;
