@@ -1,7 +1,7 @@
 import { usePlaygroundStore } from '../store/playgroundStore';
 import { Button, Card } from './ui';
 
-const PromptVault = () => {
+const PromptVault = ({ setCurrentView }) => {
   const { sessions, loadSession, deleteSession, currentTemplate } = usePlaygroundStore();
 
   const formatDate = (dateString) => {
@@ -12,8 +12,12 @@ const PromptVault = () => {
     });
   };
 
-  const handleLoadSession = (sessionId) => {
-    loadSession(sessionId);
+  const handleLoadSession = async (sessionId) => {
+    const result = loadSession(sessionId);
+    if (result && typeof result.then === 'function') {
+      await result;
+    }
+    if (setCurrentView) setCurrentView('playground');
   };
 
   const handleDeleteSession = (sessionId, event) => {
@@ -67,15 +71,15 @@ const PromptVault = () => {
       <div className="space-y-4">
         {sessions.map((session) => {
           const status = getSessionStatus(session);
-          const isCurrentSession = currentTemplate?.id === session.templateId;
+          // Use session.id for selection, not templateId
+          const isCurrentSession = currentTemplate?.id === session.id;
           
           return (
             <Card 
               key={session.id} 
-              className={`p-4 cursor-pointer transition-all hover:shadow-md ${
+              className={`p-4 transition-all hover:shadow-md ${
                 isCurrentSession ? 'ring-2 ring-blue-500 bg-blue-50' : ''
               }`}
-              onClick={() => handleLoadSession(session.id)}
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
@@ -128,7 +132,10 @@ const PromptVault = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleLoadSession(session.id)}
+                    onClick={async e => {
+                      e.stopPropagation();
+                      await handleLoadSession(session.id);
+                    }}
                   >
                     Load
                   </Button>

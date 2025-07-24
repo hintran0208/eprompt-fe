@@ -84,7 +84,7 @@ const AppLayout = () => {
       case 'playground':
         return <Playground />;
       case 'vault':
-        return <PromptVault />;
+        return <PromptVault setCurrentView={setCurrentView} />;
       default:
         return <TemplateLibrary />;
   }
