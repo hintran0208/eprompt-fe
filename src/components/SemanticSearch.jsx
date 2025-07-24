@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useToast } from '../hooks';
 import { Button, Input } from './ui';
@@ -9,6 +9,20 @@ const SemanticSearch = ({ setCurrentView }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState(null);
+  const containerRef = useRef(null);
+  // Close search results when clicking outside
+  useEffect(() => {
+    if (!searchResults) return;
+    const handleClickOutside = (event) => {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        setSearchResults(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [searchResults]);
 
   const { setCurrentTemplate } = usePlaygroundStore();
 
@@ -67,6 +81,11 @@ const SemanticSearch = ({ setCurrentView }) => {
                         {tag}
                       </span>
                     ))}
+                    {typeof result.score === 'number' && (
+                      <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded ml-2">
+                        Matching score: {result.score.toFixed(3)}
+                      </span>
+                    )}
                   </div>
                   <div className="text-sm text-gray-600 mt-1">{result.description}</div>
               </li>
@@ -81,7 +100,7 @@ const SemanticSearch = ({ setCurrentView }) => {
   )
 
   return (
-    <div className="bg-white border-b border-gray-200 p-4">
+    <div className="bg-white border-b border-gray-200 p-4" ref={containerRef}>
       <div className="max-w-4xl mx-auto">
         <div className="flex gap-3">
           <div className="flex-1">
