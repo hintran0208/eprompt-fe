@@ -1,5 +1,9 @@
 import { usePlaygroundStore } from '../store/playgroundStore';
 import { Button, Card } from './ui';
+import PropTypes from 'prop-types';
+PromptVault.propTypes = {
+  setCurrentView: PropTypes.func,
+};
 
 const PromptVault = ({ setCurrentView }) => {
   const { sessions, loadSession, deleteSession, currentTemplate } = usePlaygroundStore();
