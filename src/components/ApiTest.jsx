@@ -26,7 +26,7 @@ const ApiTest = () => {
         requiredFields: ['topic']
       };
       const input = { topic: 'test topic' };
-      const prompt = await generatePrompt(template, input);
+      const { prompt }= await generatePrompt(template, input);
       setResults(prompt);
     } catch (error) {
       setResults(`Error: ${error.message}`);
