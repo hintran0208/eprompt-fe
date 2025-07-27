@@ -61,39 +61,42 @@ export async function generatePrompt(template, input) {
     }),
   });
 
-  return response.prompt;
+  return { prompt: response.prompt, vaultId: response.vaultId };
 }
 
-export async function refinePrompt(type, prompt) {
+export async function refinePrompt(type, prompt, vaultId) {
   const response = await apiCall("/refine/prompt", {
     method: "POST",
     body: JSON.stringify({
       prompt,
       refinementType: type,
+      vaultId,
     }),
   });
 
   return response.refinedPrompt;
 }
 
-export async function generateAIContent(prompt, isRefined = false) {
+export async function generateAIContent(prompt, isRefined = false, vaultId) {
   const response = await apiCall("/ai-generate", {
     method: "POST",
     body: JSON.stringify({
       text: prompt,
       isRefinedPrompt: isRefined,
+      vaultId,
     }),
   });
 
   return response.result;
 }
 
-export async function refineContent(type, content) {
+export async function refineContent(type, content, vaultId) {
   const response = await apiCall("/refine/content", {
     method: "POST",
     body: JSON.stringify({
       content,
       refinementType: type,
+      vaultId,
     }),
   });
 

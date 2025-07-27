@@ -17,10 +17,12 @@ const Playground = () => {
     generatedContent,
     activeTab,
     isLoading,
+    vaultId,
     setCurrentInput,
     setGeneratedPrompt,
     setRefinedPrompt,
     setGeneratedContent,
+    setVaultId,
     setActiveTab,
     setIsLoading,
     saveCurrentSession,
@@ -246,8 +248,9 @@ const Playground = () => {
 
     setIsLoading(true);
     try {
-      const prompt = await generatePrompt(currentTemplate, currentInput);
+      const { prompt, vaultId } = await generatePrompt(currentTemplate, currentInput);
       setGeneratedPrompt(prompt);
+      setVaultId(vaultId);
       setEditablePrompt(prompt);
       saveCurrentSession();
       toast.success('Prompt generated successfully!');
@@ -265,7 +268,7 @@ const Playground = () => {
 
     setIsLoading(true);
     try {
-      const refined = await refinePrompt(type, promptToRefine);
+      const refined = await refinePrompt(type, promptToRefine, vaultId);
       setRefinedPrompt(refined);
       setEditableRefinedPrompt(refined);
       saveCurrentSession();
@@ -309,7 +312,7 @@ const Playground = () => {
 
     setIsLoading(true);
     try {
-      const content = await generateAIContent(promptToUse, useRefinedPrompt);
+      const content = await generateAIContent(promptToUse, useRefinedPrompt, vaultId);
       setGeneratedContent(content);
       setEditableContent(content);
       saveCurrentSession();
@@ -328,7 +331,7 @@ const Playground = () => {
 
     setIsLoading(true);
     try {
-      const refined = await refineContent(type, contentToRefine);
+      const refined = await refineContent(type, contentToRefine, vaultId);
       setGeneratedContent(refined);
       setEditableContent(refined);
       saveCurrentSession();

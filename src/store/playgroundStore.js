@@ -13,6 +13,7 @@ export const usePlaygroundStore = create()(
       activeTab: 'form',
       isLoading: false,
       sessions: [],
+      vaultId: null,
 
       // Actions
       setCurrentTemplate: (template) => set({ 
@@ -23,6 +24,8 @@ export const usePlaygroundStore = create()(
         generatedContent: null,
         activeTab: 'form'
       }),
+
+      setVaultId: (vaultId) => set({ vaultId }),
 
       setCurrentInput: (input) => set({ currentInput: input }),
 
@@ -58,6 +61,7 @@ export const usePlaygroundStore = create()(
           refinedPrompt: state.refinedPrompt || undefined,
           generatedContent: state.generatedContent || undefined,
           createdAt: new Date().toISOString(),
+          vaultId: state.vaultId || null, // Optional vaultId if needed
         };
 
         set(state => ({
