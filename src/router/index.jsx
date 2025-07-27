@@ -5,6 +5,7 @@ import HomePage from "../pages/HomePage";
 import PromptsPage from "../pages/PromptsPage";
 import SettingsPage from "../pages/SettingsPage";
 import AppLayout from "../pages/AppLayout";
+import Spotlight from "../pages/Spotlight";
 
 const router = createBrowserRouter([
   {
@@ -40,6 +41,10 @@ const router = createBrowserRouter([
         element: <SettingsPage />,
       },
     ],
+  },
+  {
+    path: "/spotlight",
+    element: <Spotlight />,
   },
 ]);
 
