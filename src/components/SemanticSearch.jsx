@@ -4,6 +4,8 @@ import { useToast } from '../hooks'
 import { Button, Input } from './ui'
 import { searchPrompts } from '../lib/api'
 import { usePlaygroundStore } from '../store/playgroundStore'
+import { generateAIContent } from '../lib/api';
+import { invoke } from '@tauri-apps/api/core';
 
 const SemanticSearch = ({ setCurrentView, isSpotlight }) => {
 	const [searchQuery, setSearchQuery] = useState('')
@@ -69,8 +71,8 @@ const SemanticSearch = ({ setCurrentView, isSpotlight }) => {
 		setIsSearching(true)
 		setShowAdvancedSearch(false) // Hide advanced dropdown when showing results
 		try {
+			const response = await searchPrompts(searchQuery);
 			// Call the search API with the query
-			const response = await searchPrompts(searchQuery)
 			console.log('API Response:', response)
 			setSearchResults(response)
 		} catch (error) {
@@ -88,11 +90,24 @@ const SemanticSearch = ({ setCurrentView, isSpotlight }) => {
 		}
 	}
 
-	const handleSelectTemplate = (result) => {
+	const handleSelectTemplate = async (prefix, result) => {
 		setSearchQuery('')
-		setCurrentTemplate(result)
 		setSearchResults(null)
-		setCurrentView('playground')
+		if (isSpotlight) {
+			// invoke('my_custom_command', { str: 'here bae' + result });
+			invoke('hide_spotlight');
+			try {
+				const prompt = renderDescription(prefix, result);
+				const aiContent = await generateAIContent(prompt);
+				invoke('my_custom_command', { str: aiContent });
+			}
+			catch (e) {
+				invoke('my_custom_command', { str: 'Err: ' + e.message });
+			}
+		} else {
+			setCurrentTemplate(result);
+			setCurrentView('playground');
+		}
 	}
 
 	const renderRole = (prefix, result) => {
@@ -163,41 +178,20 @@ const SemanticSearch = ({ setCurrentView, isSpotlight }) => {
 												(result, index) => (
 													<li
 														key={index}
-														className={`p-2 hover:bg-gray-100 cursor-pointer ${index <
-															searchResults[
-																prefix
-															].length -
-															1
-															? 'border-b border-gray-200'
-															: ''
-															}`}
+														className={`p-2 hover:bg-gray-100 cursor-pointer ${index < searchResults[prefix].length - 1
+															? 'border-b border-gray-200' : ''}`}
 														onClick={
-															prefix ===
-																'template'
-																? () =>
-																	handleSelectTemplate(
-																		result
-																	)
-																: () => {
-																	toast.info(
-																		'This feature is currently under development.',
-																		6000
-																	)
-																}
+															isSpotlight || prefix === 'template'
+																? () => handleSelectTemplate(prefix, result)
+																: () => { toast.info('This feature is currently under development.', 6000) }
 														}
 													>
 														<div className='flex items-center gap-2'>
 															<span className='font-semibold text-base'>
 																{result.name}
 															</span>
-															{renderRole(
-																prefix,
-																result
-															)}
-															{renderTags(
-																prefix,
-																result
-															)}
+															{renderRole(prefix, result)}
+															{renderTags(prefix, result)}
 															{typeof result.score ===
 																'number' && (
 																	<span className='bg-green-100 text-green-700 text-xs px-2 py-1 rounded'>
@@ -207,10 +201,7 @@ const SemanticSearch = ({ setCurrentView, isSpotlight }) => {
 																)}
 														</div>
 														<div className='text-sm text-gray-600 mt-1 truncate'>
-															{renderDescription(
-																prefix,
-																result
-															)}
+															{renderDescription(prefix, result)}
 														</div>
 													</li>
 												)
@@ -230,7 +221,7 @@ const SemanticSearch = ({ setCurrentView, isSpotlight }) => {
 
 	return (
 		<div
-			className='bg-transparent border-b border-gray-200 p-4'
+			className='bg-transparent border-gray-200 p-4'
 			ref={containerRef}
 		>
 			<div className='max-w-4xl mx-auto'>
