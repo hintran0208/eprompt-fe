@@ -1,22 +1,30 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::time;
 use enigo::{Direction, Enigo, Key, Keyboard, Settings};
+use std::time;
 use tauri::{Listener, Manager, TitleBarStyle};
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 pub const SPOTLIGHT_LABEL: &str = "spotlight";
 
 #[tauri::command]
-fn my_custom_command() {
+fn my_custom_command(str: &str) {
     let mut enigo = Enigo::new(&Settings::default()).unwrap();
-    enigo.text("ok");
-    println!("I was invoked from JavaScript!");
+    enigo.text(str);
+    println!("Inserted: {:}", str);
+}
+
+#[tauri::command]
+fn hide_spotlight() {
+    let mut enigo = Enigo::new(&Settings::default()).unwrap();
+    enigo.key(Key::Control, Direction::Press);
+    enigo.key(Key::Unicode('k'), Direction::Click);
+    enigo.key(Key::Control, Direction::Release);
 }
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![my_custom_command])
+        .invoke_handler(tauri::generate_handler![my_custom_command, hide_spotlight])
         .setup(|app| {
             let handle = app.app_handle();
 
@@ -74,7 +82,6 @@ fn main() {
                                             enigo.key(Key::Tab, Direction::Click);
                                             enigo.key(Key::Meta, Direction::Release);
                                             std::thread::sleep(std::time::Duration::from_secs(1));
-                                            enigo.text("it's over");
                                         } else {
                                             spotlight_window.show().unwrap();
                                             spotlight_window.set_focus().unwrap();

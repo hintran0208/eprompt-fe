@@ -5,7 +5,7 @@ import Playground from '../components/Playground';
 import PromptVault from '../components/PromptVault';
 import { usePlaygroundStore } from '../store/playgroundStore';
 import { Button } from '../components/ui';
-import '../style/spotlight.css';
+// import '../style/spotlight.css';
 // import { invoke } from '@tauri-apps/api/core';
 
 const Spotlight = () => {

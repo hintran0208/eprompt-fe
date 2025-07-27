@@ -4,6 +4,8 @@ import { useToast } from '../hooks'
 import { Button, Input } from './ui'
 import { searchPrompts } from '../lib/api'
 import { usePlaygroundStore } from '../store/playgroundStore'
+import { generateAIContent } from '../lib/api';
+import { invoke } from '@tauri-apps/api/core';
 
 const SemanticSearch = ({ setCurrentView }) => {
   const [searchQuery, setSearchQuery] = useState('')
