@@ -32,6 +32,27 @@ const SemanticSearch = ({ setCurrentView }) => {
 
 	const toast = useToast()
 
+	const PREFIXES = [
+		'template',
+		'vault',
+		'initial-prompt',
+		'refined-prompt',
+		'content',
+	]
+
+	const isValidQuery = (query) => {
+		const prefixes = PREFIXES.map((prefix) => `${prefix}:`)
+		let remainingQuery = query;
+
+		prefixes.forEach((prefix) => {
+			if (remainingQuery.includes(prefix)) {
+				remainingQuery = remainingQuery.replace(prefix, '');
+			}
+		})
+
+		return remainingQuery.trim().length > 0
+	}
+
 	const handleAddPrefix = (prefix) => {
 		const prefixWithColon = `${prefix}:`
 
@@ -72,14 +93,6 @@ const SemanticSearch = ({ setCurrentView }) => {
 		setSearchResults(null)
 		setCurrentView('playground')
 	}
-
-	const PREFIXES = [
-		'template',
-		'vault',
-		'initial-prompt',
-		'refined-prompt',
-		'content',
-	]
 
 	const renderRole = (prefix, result) => {
 		if (prefix === 'template') {
@@ -188,7 +201,7 @@ const SemanticSearch = ({ setCurrentView }) => {
 																			'This feature is currently under development.',
 																			6000
 																		)
-										}
+															}
 														}
 													>
 														<div className='flex items-center gap-2'>
@@ -206,14 +219,12 @@ const SemanticSearch = ({ setCurrentView }) => {
 															{typeof result.score ===
 																'number' && (
 																<span className='bg-green-100 text-green-700 text-xs px-2 py-1 rounded ml-2'>
-																	Matching{' '}
-																	{(
-																		result.score *
-																		100
-																	).toFixed(
+																	Matching
+																	Score:{' '}
+																	{result.score.toFixed(
 																		2
 																	)}
-																	%
+																	/1
 																</span>
 															)}
 														</div>
@@ -257,7 +268,7 @@ const SemanticSearch = ({ setCurrentView }) => {
 					</div>
 					<Button
 						onClick={handleSearch}
-						disabled={isSearching || !searchQuery.trim()}
+						disabled={isSearching || !isValidQuery(searchQuery)}
 						className='px-6'
 					>
 						{isSearching ? (
@@ -307,6 +318,10 @@ const SemanticSearch = ({ setCurrentView }) => {
 					</Button>
 					{showAdvancedSearch && (
 						<div className='absolute top-full mt-2 bg-white border border-gray-300 rounded shadow-md z-50 w-full p-4'>
+							<div className='mb-4 text-xs text-gray-500 text-center'>
+								Use the prefixes below to refine your search
+								results.
+							</div>
 							<div className='flex flex-wrap gap-4'>
 								{PREFIXES.map((prefix) => (
 									<label
