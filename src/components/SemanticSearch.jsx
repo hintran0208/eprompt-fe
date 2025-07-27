@@ -188,7 +188,7 @@ const SemanticSearch = ({ setCurrentView }) => {
 																			'This feature is currently under development.',
 																			6000
 																		)
-												    }
+										}
 														}
 													>
 														<div className='flex items-center gap-2'>
