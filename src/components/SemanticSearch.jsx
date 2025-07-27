@@ -11,22 +11,23 @@ const SemanticSearch = ({ setCurrentView }) => {
 	const [searchResults, setSearchResults] = useState(null)
 	const [showAdvancedSearch, setShowAdvancedSearch] = useState(false)
 	const containerRef = useRef(null)
-	// Close search results when clicking outside
-	useEffect(() => {
-		if (!searchResults) return
-		const handleClickOutside = (event) => {
-			if (
-				containerRef.current &&
-				!containerRef.current.contains(event.target)
-			) {
-				setSearchResults(null)
-			}
+// Close search results and advanced dropdown when clicking outside
+useEffect(() => {
+	if (!searchResults && !showAdvancedSearch) return
+	const handleClickOutside = (event) => {
+		if (
+			containerRef.current &&
+			!containerRef.current.contains(event.target)
+		) {
+			setSearchResults(null)
+			setShowAdvancedSearch(false)
 		}
-		document.addEventListener('mousedown', handleClickOutside)
-		return () => {
-			document.removeEventListener('mousedown', handleClickOutside)
-		}
-	}, [searchResults])
+	}
+	document.addEventListener('mousedown', handleClickOutside)
+	return () => {
+		document.removeEventListener('mousedown', handleClickOutside)
+	}
+}, [searchResults, showAdvancedSearch])
 
 	const { setCurrentTemplate } = usePlaygroundStore()
 
@@ -64,20 +65,20 @@ const SemanticSearch = ({ setCurrentView }) => {
 	}
 
 	const handleSearch = async () => {
-		if (!searchQuery.trim()) return
-		setIsSearching(true)
-
-		try {
-			// Call the search API with the query
-			const response = await searchPrompts(searchQuery)
-			console.log('API Response:', response)
-			setSearchResults(response)
-		} catch (error) {
-			console.error('Error during search:', error)
-			// Show placeholder message using toast
-			toast.error('Error during search', 6000)
-		}
-		setIsSearching(false)
+	if (!searchQuery.trim()) return
+	setIsSearching(true)
+	setShowAdvancedSearch(false) // Hide advanced dropdown when showing results
+	try {
+		// Call the search API with the query
+		const response = await searchPrompts(searchQuery)
+		console.log('API Response:', response)
+		setSearchResults(response)
+	} catch (error) {
+		console.error('Error during search:', error)
+		// Show placeholder message using toast
+		toast.error('Error during search', 6000)
+	}
+	setIsSearching(false)
 	}
 
 	const handleKeyPress = (e) => {
@@ -121,25 +122,7 @@ const SemanticSearch = ({ setCurrentView }) => {
 			)
 		}
 
-		return (
-			<>
-				{result.initialPrompt && (
-					<span className='bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded'>
-						Prompt
-					</span>
-				)}
-				{result.refinedPrompt && (
-					<span className='bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded'>
-						Refined
-					</span>
-				)}
-				{result.generatedContent && (
-					<span className='bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded'>
-						Content
-					</span>
-				)}
-			</>
-		)
+		return null;
 	}
 
 	const renderDescription = (prefix, result) => {
@@ -218,13 +201,9 @@ const SemanticSearch = ({ setCurrentView }) => {
 															)}
 															{typeof result.score ===
 																'number' && (
-																<span className='bg-green-100 text-green-700 text-xs px-2 py-1 rounded ml-2'>
-																	Matching
-																	Score:{' '}
-																	{result.score.toFixed(
-																		2
-																	)}
-																	/1
+																<span className='bg-green-100 text-green-700 text-xs px-2 py-1 rounded'>
+																	Matching Score:{' '}
+																	{(result.score * 100).toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 })}%
 																</span>
 															)}
 														</div>
@@ -347,7 +326,8 @@ const SemanticSearch = ({ setCurrentView }) => {
 						</div>
 					)}
 				</div>
-				{searchResults && renderSearchResults()}
+				{/* Hide advanced dropdown when search results are shown */}
+				{searchResults && !showAdvancedSearch && renderSearchResults()}
 				<div className='mt-2 text-xs text-gray-500'>
 					Try searching for &quot;content writing&quot;, &quot;code
 					review&quot;, or &quot;email templates&quot;

@@ -15,7 +15,7 @@ const TemplateLibrary = () => {
       try {
         const data = await getAllTemplates();
         setTemplates(data);
-        toast.success('Successfully got all templates from database');
+        toast.success('Successfully got all templates from database', 500);
       } catch (err) {
         toast.error(`Failed to load templates: ${err.message}`);
       }
