@@ -4,7 +4,7 @@ import { usePlaygroundStore } from '../store/playgroundStore';
 import { generatePrompt, refinePrompt, generateAIContent, refineContent } from '../lib/api';
 import { copyToClipboard } from '../lib/utils';
 import { exportAllContent } from '../lib/exportUtils';
-import { Button, Card, Input, Textarea, ExportModal } from './ui';
+import { Button, Card, Textarea, ExportModal } from './ui';
 import { useToast } from '../hooks';
 import RefineToolbar from './RefineToolbar';
 
