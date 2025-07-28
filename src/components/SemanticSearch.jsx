@@ -142,92 +142,129 @@ useEffect(() => {
 		}
 	}
 
-	const renderSearchResults = () =>
-		Object.keys(searchResults).some(
-			(key) => PREFIXES.includes(key) && searchResults[key]?.length > 0
-		) ? (
-			<div className='absolute mt-2 bg-white border border-gray-300 rounded shadow-md z-50 w-full max-w-4xl'>
-				<ul className='max-h-95 overflow-y-auto'>
-					{PREFIXES.map(
-						(prefix) =>
-							searchResults[prefix]?.length > 0 && (
-								<li key={prefix} className='mb-4'>
-									<div className='border border-gray-300 rounded'>
-										{/* Header */}
-										<div className='font-bold text-lg text-gray-800 capitalize bg-gray-300 px-3 py-2 rounded-t'>
-											{prefix.replace('-', ' ')}
-										</div>
-										{/* Results */}
-										<ul>
-											{searchResults[prefix].map(
-												(result, index) => (
-													<li
-														key={index}
-														className={`p-2 hover:bg-gray-100 cursor-pointer ${
-															index <
-															searchResults[
-																prefix
-															].length -
-																1
-																? 'border-b border-gray-200'
-																: ''
-														}`}
-														onClick={
-															prefix ===
-															'template'
-																? () =>
-																		handleSelectTemplate(
-																			result
-																		)
-																: () => {
-																		toast.info(
-																			'This feature is currently under development.',
-																			6000
-																		)
-															}
-														}
-													>
-														<div className='flex items-center gap-2'>
-															<span className='font-semibold text-base'>
-																{result.name}
-															</span>
-															{renderRole(
-																prefix,
-																result
-															)}
-															{renderTags(
-																prefix,
-																result
-															)}
-															{typeof result.score ===
-																'number' && (
-																<span className='bg-green-100 text-green-700 text-xs px-2 py-1 rounded'>
-																	Matching Score:{' '}
-																	{(result.score * 100).toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 })}%
-																</span>
-															)}
-														</div>
-														<div className='text-sm text-gray-600 mt-1 truncate'>
-															{renderDescription(
-																prefix,
-																result
-															)}
-														</div>
-													</li>
-												)
-											)}
-										</ul>
-									</div>
-								</li>
-							)
+
+const SkeletonHeader = () => (
+  <div className="bg-gray-300 px-3 py-2 rounded-t animate-pulse">
+	<div className="h-6 w-32 bg-gray-200 rounded" />
+  </div>
+);
+
+const SkeletonResult = () => (
+  <li className="p-2 border-b border-gray-200 animate-pulse">
+	<div className="flex items-center gap-2">
+	  <div className="h-4 w-24 bg-gray-200 rounded" />
+	  <div className="h-4 w-12 bg-gray-200 rounded" />
+	  <div className="h-4 w-16 bg-gray-200 rounded" />
+	</div>
+	<div className="h-3 bg-gray-200 rounded w-2/3 mt-2" />
+  </li>
+);
+
+const renderSearchResults = () => {
+  if (isSearching) {
+	return (
+	  <div className="absolute mt-2 bg-white border border-gray-300 rounded shadow-md z-50 w-full max-w-4xl">
+		<ul className="max-h-95 overflow-y-auto">
+		  <li className="mb-4">
+			<div className="border border-gray-300 rounded">
+			  <SkeletonHeader />
+			  <ul>
+				{Array.from({ length: 3 }).map((_, idx) => (
+				  <SkeletonResult key={idx} />
+				))}
+			  </ul>
+			</div>
+		  </li>
+		</ul>
+	  </div>
+	);
+  }
+  return Object.keys(searchResults).some(
+	(key) => PREFIXES.includes(key) && searchResults[key]?.length > 0
+  ) ? (
+	<div className='absolute mt-2 bg-white border border-gray-300 rounded shadow-md z-50 w-full max-w-4xl'>
+	  <ul className='max-h-95 overflow-y-auto'>
+		{PREFIXES.map(
+		  (prefix) =>
+			searchResults[prefix]?.length > 0 && (
+			  <li key={prefix} className='mb-4'>
+				<div className='border border-gray-300 rounded'>
+				  {/* Header */}
+				  <div className='font-bold text-lg text-gray-800 capitalize bg-gray-300 px-3 py-2 rounded-t'>
+					{prefix.replace('-', ' ')}
+				  </div>
+				  {/* Results */}
+				  <ul>
+					{searchResults[prefix].map(
+					  (result, index) => (
+						<li
+						  key={index}
+						  className={`p-2 hover:bg-gray-100 cursor-pointer ${
+							index <
+							searchResults[
+							  prefix
+							].length -
+							  1
+							  ? 'border-b border-gray-200'
+							  : ''
+						  }`}
+						  onClick={
+							prefix ===
+							'template'
+							  ? () =>
+								  handleSelectTemplate(
+									result
+								  )
+							  : () => {
+								  toast.info(
+									'This feature is currently under development.',
+									6000
+								  )
+							}
+						  }
+						>
+						  <div className='flex items-center gap-2'>
+							<span className='font-semibold text-base'>
+							  {result.name}
+							</span>
+							{renderRole(
+							  prefix,
+							  result
+							)}
+							{renderTags(
+							  prefix,
+							  result
+							)}
+							{typeof result.score ===
+							  'number' && (
+							  <span className='bg-green-100 text-green-700 text-xs px-2 py-1 rounded'>
+								Matching Score:{' '}
+								{(result.score * 100).toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 })}%
+							  </span>
+							)}
+						  </div>
+						  <div className='text-sm text-gray-600 mt-1 truncate'>
+							{renderDescription(
+							  prefix,
+							  result
+							)}
+						  </div>
+						</li>
+					  )
 					)}
-				</ul>
-			</div>
-		) : (
-			<div className='absolute mt-2 bg-white border border-gray-300 rounded shadow-md z-50 w-full max-w-4xl p-4 text-gray-500 text-center'>
-				No results found.
-			</div>
-		)
+				  </ul>
+				</div>
+			  </li>
+			)
+		)}
+	  </ul>
+	</div>
+  ) : (
+	<div className='absolute mt-2 bg-white border border-gray-300 rounded shadow-md z-50 w-full max-w-4xl p-4 text-gray-500 text-center'>
+	  No results found.
+	</div>
+  );
+};
 
 	return (
 		<div
@@ -326,8 +363,8 @@ useEffect(() => {
 						</div>
 					)}
 				</div>
-				{/* Hide advanced dropdown when search results are shown */}
-				{searchResults && !showAdvancedSearch && renderSearchResults()}
+		{/* Hide advanced dropdown when search results are shown */}
+		{!showAdvancedSearch && (isSearching || searchResults) && renderSearchResults()}
 				<div className='mt-2 text-xs text-gray-500'>
 					Try searching for &quot;content writing&quot;, &quot;code
 					review&quot;, or &quot;email templates&quot;
