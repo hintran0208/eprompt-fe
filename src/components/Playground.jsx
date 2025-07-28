@@ -399,24 +399,32 @@ const Playground = () => {
 
       <div className="space-y-4">
         {currentTemplate?.requiredFields.map(field => (
-          <Input
-            key={field}
-            label={`${field} *`}
-            placeholder={`Enter ${field}...`}
-            value={currentInput[field] || ''}
-            onChange={(e) => handleInputChange(field, e.target.value)}
-            error={formErrors[field]}
-          />
+          <div key={field}>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{field} *</label>
+            <Textarea
+              value={currentInput[field] || ''}
+              onChange={e => handleInputChange(field, e.target.value)}
+              rows={4}
+              className="font-mono text-sm bg-white"
+              placeholder={`Enter ${field}...`}
+            />
+            {formErrors[field] && (
+              <span className="text-xs text-red-500">{formErrors[field]}</span>
+            )}
+          </div>
         ))}
 
         {currentTemplate?.optionalFields?.map(field => (
-          <Input
-            key={field}
-            label={field}
-            placeholder={`Enter ${field} (optional)...`}
-            value={currentInput[field] || ''}
-            onChange={(e) => handleInputChange(field, e.target.value)}
-          />
+          <div key={field}>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{field}</label>
+            <Textarea
+              value={currentInput[field] || ''}
+              onChange={e => handleInputChange(field, e.target.value)}
+              rows={3}
+              className="font-mono text-sm bg-white"
+              placeholder={`Enter ${field} (optional)...`}
+            />
+          </div>
         ))}
       </div>
 
