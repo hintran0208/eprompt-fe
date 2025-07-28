@@ -52,23 +52,6 @@ const TemplateLibrary = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Unselect template when clicking outside the selected card
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        currentTemplate &&
-        selectedCardRef.current &&
-        !selectedCardRef.current.contains(event.target)
-      ) {
-        setCurrentTemplate(null);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [currentTemplate, setCurrentTemplate]);
-
   const handleSelectTemplate = (template) => {
     setCurrentTemplate(template);
   };
