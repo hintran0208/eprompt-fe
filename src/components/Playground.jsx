@@ -88,8 +88,8 @@ const Playground = () => {
 	}
 
 	const handleSubmitNameModal = () => {
-		if (!vaultName.trim() || !vaultDescription.trim()) {
-			return alert('Name and description are required!')
+		if (!vaultName.trim()) {
+			return alert('Name is required!')
 		}
 
 		setCurrentVaultItem({
@@ -98,7 +98,7 @@ const Playground = () => {
 		})
 		setShowNameModal(false)
 
-		toast.success('Vault item name and description updated successfully!')
+		toast.success('Vault details updated successfully!')
 	}
 
 	const handleCloseNameModal = () => {
@@ -504,7 +504,6 @@ const Playground = () => {
 				toast.error('No Vault Item to save!')
 				return
 			}
-
 			setIsLoading(true)
 			const updatedVaultItem = await updateVaultItem(currentVaultItem)
 			setCurrentVaultItem(updatedVaultItem)
