@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import Navbar from "./Navbar";
 import Sidebar from "./Sidebar";
+import { PermissionsDialog } from "../ui/PermissionsDialog";
 
 const Layout = () => {
   return (
@@ -12,6 +13,7 @@ const Layout = () => {
           <Outlet />
         </main>
       </div>
+      <PermissionsDialog />
     </div>
   );
 };

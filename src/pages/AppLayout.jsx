@@ -1,14 +1,59 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import SemanticSearch from '../components/SemanticSearch';
 import TemplateLibrary from '../components/TemplateLibrary';
 import Playground from '../components/Playground';
 import PromptVault from '../components/PromptVault';
 import { usePlaygroundStore } from '../store/playgroundStore';
 import { Button } from '../components/ui';
+import { listen } from '@tauri-apps/api/event';
 
 const AppLayout = () => {
   const [currentView, setCurrentView] = useState('templates');
-  const { currentTemplate, clearCurrentSession } = usePlaygroundStore();
+  const { currentTemplate, setCurrentTemplate, clearCurrentSession } = usePlaygroundStore();
+  
+  // Create a stable callback function that won't change between renders
+  const handleTemplateFromStore = useCallback((template) => {
+    if (!currentTemplate) {
+      clearCurrentSession();
+      setCurrentTemplate(template);
+    }
+  }, [currentTemplate, clearCurrentSession, setCurrentTemplate]);
+  
+  // Listen for spotlight-hidden event
+  useEffect(() => {
+
+    const setupListener = async () => {
+      const unlisten = await listen('spotlight-hidden', () => {
+        console.log('Spotlight hidden event received in main app - switching to playground view');
+        
+        // Check if we have a template from localStorage as a backup
+        try {
+          const savedTemplate = localStorage.getItem('lastSelectedTemplate');
+          if (savedTemplate) {
+            const parsedTemplate = JSON.parse(savedTemplate);
+            console.log('Using template from localStorage:', parsedTemplate.name);
+            
+            // Use the stored function to handle template
+            handleTemplateFromStore(parsedTemplate);
+            
+            // Remove from localStorage to avoid using it again
+            localStorage.removeItem('lastSelectedTemplate');
+
+            // When spotlight is hidden after template selection, switch to playground view
+            setCurrentView('playground');
+          }
+        } catch (e) {
+          console.error('Error retrieving template from localStorage:', e);
+        }
+      });
+      
+      return () => {
+        unlisten();
+      };
+    };
+    
+    setupListener();
+  }, [handleTemplateFromStore]);
 
   const handleNewSession = () => {
     clearCurrentSession();

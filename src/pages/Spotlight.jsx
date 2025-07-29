@@ -13,7 +13,7 @@ const Spotlight = () => {
   // const [currentView, setCurrentView] = useState('templates');
 
   return (
-    <div className="min-h-screen bg-transparent p-100">
+    <div className="bg-transparent min-h-screen">
       {/* <SemanticSearch setCurrentView={setCurrentView} isSpotlight={true} /> */}
       <SemanticSearch setCurrentView={() => { }} isSpotlight={true} />
     </div>

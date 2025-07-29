@@ -4,8 +4,8 @@ import { useToast } from '../hooks'
 import { Button, Input } from './ui'
 import { searchPrompts } from '../lib/api'
 import { usePlaygroundStore } from '../store/playgroundStore'
-import { generateAIContent } from '../lib/api';
 import { invoke } from '@tauri-apps/api/core';
+import { cn } from '../lib/utils'
 
 const SemanticSearch = ({ setCurrentView, isSpotlight }) => {
   const [searchQuery, setSearchQuery] = useState('')
@@ -93,21 +93,26 @@ const SemanticSearch = ({ setCurrentView, isSpotlight }) => {
   const handleSelectTemplate = async (prefix, result) => {
     setSearchQuery('')
     setSearchResults(null)
+    
+    // Make sure we have the result object with all properties
+    console.log('Template selected:', result)
+    
     if (isSpotlight) {
-			// invoke('my_custom_command', { str: 'here bae' + result });
-			invoke('hide_spotlight')
-			try {
-				const prompt = renderDescription(prefix, result)
-				const aiContent = await generateAIContent(prompt)
-				invoke('my_custom_command', { str: aiContent })
-			}
-			catch (e) {
-				invoke('my_custom_command', { str: 'Err: ' + e.message })
-			}
-		} else {
-			setCurrentTemplate(result)
-			setCurrentView('playground')
-		}
+      try {
+        // Use localStorage as an additional backup to ensure the selection persists
+        localStorage.setItem('lastSelectedTemplate', JSON.stringify(result))
+        
+        // First hide the spotlight window
+        await invoke('hide_spotlight')
+      } catch (e) {
+        console.error('Error hiding spotlight:', e)
+        toast.error(`Error: ${e.message}`, 3000)
+      }
+    } else {
+      // For main UI, store the template and directly set the view to playground
+      setCurrentTemplate(result)
+      setCurrentView('playground')
+    }
   }
 
   const handleSelectVaultItem = (result) => {
@@ -301,7 +306,7 @@ const SemanticSearch = ({ setCurrentView, isSpotlight }) => {
 
   return (
     <div
-      className='bg-transparent border-b border-gray-200 p-4'
+      className={cn('bg-transparent p-4', isSpotlight ? '' : 'border-b border-gray-200')}
       ref={containerRef}
     >
       <div className='max-w-4xl mx-auto'>
