@@ -70,13 +70,23 @@ const PromptVault = ({ setCurrentView }) => {
 		)
 	}
 
-	const handleloadVaultItem = async (vault) => {
-		const result = loadVaultItem(vault)
-		if (result && typeof result.then === 'function') {
-			await result
-		}
-		if (setCurrentView) setCurrentView('playground')
+const handleloadVaultItem = async (vault) => {
+	const result = loadVaultItem(vault)
+	if (result && typeof result.then === 'function') {
+		await result
 	}
+	// Set the correct tab based on vault status
+	if (vault.generatedContent) {
+		usePlaygroundStore.getState().setActiveTab('content')
+	} else if (vault.refinedPrompt) {
+		usePlaygroundStore.getState().setActiveTab('refined-prompt')
+	} else if (vault.initialPrompt) {
+		usePlaygroundStore.getState().setActiveTab('initial-prompt')
+	} else {
+		usePlaygroundStore.getState().setActiveTab('form')
+	}
+	if (setCurrentView) setCurrentView('playground')
+}
 
 	const handleDeleteVaultItem = async (vaultId, event) => {
 		event.stopPropagation()
@@ -195,8 +205,8 @@ const PromptVault = ({ setCurrentView }) => {
 												</h3>
 												<span
 													className={`
-                      inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                      ${
+					  inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+					  ${
 							status.color === 'green'
 								? 'bg-green-100 text-green-800'
 								: status.color === 'blue'
@@ -205,7 +215,7 @@ const PromptVault = ({ setCurrentView }) => {
 								? 'bg-yellow-100 text-yellow-800'
 								: 'bg-gray-100 text-gray-800'
 						}
-                    `}
+					`}
 												>
 													{status.label}
 												</span>
