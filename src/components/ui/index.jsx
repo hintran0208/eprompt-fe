@@ -5,3 +5,4 @@ export { default as Textarea } from "./Textarea";
 export { default as ExportModal } from "./ExportModal";
 export { default as ToastProvider } from "./Toast/Toast";
 export { default as ToastContext } from "./Toast/ToastContext";
+export { default as Modal } from "./Modal";

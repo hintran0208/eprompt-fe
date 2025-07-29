@@ -52,16 +52,17 @@ export async function getAllTemplates() {
   return await apiCall("/template/all");
 }
 
-export async function generatePrompt(template, input) {
+export async function generatePrompt(template, input, vaultItem) {
   const response = await apiCall("/generate", {
     method: "POST",
     body: JSON.stringify({
       template,
       context: input,
+      vaultItem,
     }),
   });
 
-  return { prompt: response.prompt, vaultId: response.vaultId };
+  return { prompt: response.prompt, vaultItem: response.vaultItem };
 }
 
 export async function refinePrompt(type, prompt, vaultId) {
@@ -122,4 +123,26 @@ export async function searchPrompts(query) {
   });
 
   return response || [];
+}
+
+export async function updateVaultItem(vaultItem) { 
+  const response = await apiCall("/vault/update", {
+    method: "POST",
+    body: JSON.stringify(vaultItem),
+  });
+
+  return response.vaultItem;
+}
+
+export async function deleteVaultItem(vaultId) {
+  const response = await apiCall(`/vault/delete/${vaultId}`, {
+    method: "DELETE",
+  });
+  
+  return response;
+}
+
+export async function getVaultItemsByUserId(id) {
+  const response = await apiCall(`/vault/user/${id}`);
+  return response;
 }
