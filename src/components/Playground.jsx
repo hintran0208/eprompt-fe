@@ -412,6 +412,7 @@ const Playground = () => {
 			)
 			setRefinedPrompt(refined)
 			setEditableRefinedPrompt(refined)
+			setCurrentVaultItem({ refinedPrompt: refined })
 			toast.success('Prompt refined successfully!')
 		} catch (error) {
 			console.error('Failed to refine prompt:', error)
@@ -432,6 +433,7 @@ const Playground = () => {
 			const refined = await refinePrompt(type, promptToRefine)
 			setRefinedPrompt(refined)
 			setEditableRefinedPrompt(refined)
+			setCurrentVaultItem({ refinedPrompt: refined })
 			toast.success('Prompt refined successfully!')
 		} catch (error) {
 			console.error('Failed to refine prompt:', error)
@@ -462,6 +464,7 @@ const Playground = () => {
 			)
 			setGeneratedContent(content)
 			setEditableContent(content)
+			setCurrentVaultItem({ generatedContent: content })
 			toast.success(
 				`Content generated successfully from ${
 					useRefinedPrompt ? 'refined' : 'basic'
@@ -490,6 +493,7 @@ const Playground = () => {
 			)
 			setGeneratedContent(refined)
 			setEditableContent(refined)
+			setCurrentVaultItem({ generatedContent: refined })
 			toast.success('Content refined successfully!')
 		} catch (error) {
 			console.error('Failed to refine content:', error)
