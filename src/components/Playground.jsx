@@ -14,7 +14,6 @@ import { Button, Card, Textarea, ExportModal, Modal } from './ui'
 import { useToast } from '../hooks'
 import RefineToolbar from './RefineToolbar'
 
-
 const Playground = () => {
 	const {
 		currentTemplate,
@@ -99,8 +98,7 @@ const Playground = () => {
 		})
 		setShowNameModal(false)
 
-		toast.success('Vault item name and description saved successfully!')
-
+		toast.success('Vault item name and description updated successfully!')
 	}
 
 	const handleCloseNameModal = () => {
@@ -953,7 +951,8 @@ const Playground = () => {
 							className='text-gray-600 cursor-pointer h-[60px] flex items-top'
 							onClick={() => setIsEditingDescription(true)}
 						>
-							{currentVaultItem?.description || 'No description provided.'}
+							{currentVaultItem?.description ||
+								'No description provided.'}
 						</p>
 					)}
 				</div>
@@ -984,9 +983,12 @@ const Playground = () => {
 					<h3 className='text-lg font-semibold text-gray-900'>
 						Enter Vault Details
 					</h3>
+					<p className='text-sm text-gray-600'>
+						Please provide a Vault Name before continuing.
+					</p>
 					<div>
 						<label className='block text-sm font-medium text-gray-700'>
-							Name
+							Name*
 						</label>
 						<Textarea
 							value={vaultName}
