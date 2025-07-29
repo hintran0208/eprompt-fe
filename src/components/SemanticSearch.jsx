@@ -95,12 +95,22 @@ const SemanticSearch = ({ setCurrentView }) => {
     setCurrentView('playground')
   }
 
-  const handleSelectVaultItem = (result, prefix) => {
+  const handleSelectVaultItem = (result) => {
     setSearchQuery('')
     setCurrentTemplate(templates.find(t => t.id === result.templateId))
     loadVaultItem(result)
     setCurrentView('playground')
-    setActiveTab(prefix)
+
+    let activeTab = 'form'
+    if (result.generatedContent) {
+      activeTab = 'content'
+    } else if (result.refinedPrompt) {
+      activeTab = 'refined-prompt'
+    } else if (result.initialPrompt) {
+      activeTab = 'initial-prompt'
+    }
+
+    setActiveTab(activeTab)
     setSearchResults(null)
   }
 
@@ -225,7 +235,7 @@ const SemanticSearch = ({ setCurrentView }) => {
                                   )
                                 : () => {
                                   handleSelectVaultItem(
-                                    result, prefix
+                                    result
                                   )
                                 }
                             }
