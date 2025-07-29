@@ -29,6 +29,7 @@ const PromptVault = ({ setCurrentView }) => {
 		setVaults,
 		loadVaultItem,
 		currentVaultItem,
+		clearCurrentSession,
 	} = usePlaygroundStore()
 	const [loading, setLoading] = useState(vaults.length === 0)
 
@@ -93,6 +94,10 @@ const handleloadVaultItem = async (vault) => {
 		if (confirm('Are you sure you want to delete this session?')) {
 			await deleteVaultItem(vaultId)
 			await fetchVaults()
+			toast.success('Vault item deleted successfully'); console.log('Vault item deleted:', vaultId); console.log('Current vault item:', currentVaultItem);
+			if (vaultId === currentVaultItem.vaultId) {
+				clearCurrentSession();
+			}
 		}
 	}
 

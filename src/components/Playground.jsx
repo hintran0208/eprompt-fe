@@ -34,19 +34,20 @@ const Playground = () => {
 	} = usePlaygroundStore()
 
 	const [formErrors, setFormErrors] = useState({})
+	const [nameError, setNameError] = useState('')
 	const [editablePrompt, setEditablePrompt] = useState('')
 	const [editableRefinedPrompt, setEditableRefinedPrompt] = useState('')
 	const [editableContent, setEditableContent] = useState('')
 	const [isEditingPrompt, setIsEditingPrompt] = useState(false)
 	const [isEditingRefinedPrompt, setIsEditingRefinedPrompt] = useState(false)
 	const [isEditingContent, setIsEditingContent] = useState(false)
-	const [isEditingName, setIsEditingName] = useState(false)
-	const [isEditingDescription, setIsEditingDescription] = useState(false)
 	const [showMarkdownPreview, setShowMarkdownPreview] = useState(false)
 	const [showExportModal, setShowExportModal] = useState(false)
 	const [showNameModal, setShowNameModal] = useState(false)
-	const [vaultName, setVaultName] = useState('')
-	const [vaultDescription, setVaultDescription] = useState('')
+	const [vaultName, setVaultName] = useState(currentVaultItem?.name || '')
+	const [vaultDescription, setVaultDescription] = useState(
+		currentVaultItem?.description || ''
+	)
 
 	const toast = useToast()
 
@@ -69,18 +70,6 @@ const Playground = () => {
 		}
 	}, [generatedContent, isEditingContent])
 
-	const handleSaveName = () => {
-		setIsEditingName(false)
-		setCurrentVaultItem({ name: vaultName })
-	}
-
-	const handleSaveDescription = () => {
-		setIsEditingDescription(false)
-		setCurrentVaultItem({
-			description: vaultDescription,
-		})
-	}
-
 	const handleOpenNameModal = () => {
 		setVaultName(currentVaultItem?.name || '')
 		setVaultDescription(currentVaultItem?.description || '')
@@ -89,7 +78,8 @@ const Playground = () => {
 
 	const handleSubmitNameModal = () => {
 		if (!vaultName.trim()) {
-			return alert('Name is required!')
+			setNameError('Name is required!')
+			return
 		}
 
 		setCurrentVaultItem({
@@ -97,26 +87,37 @@ const Playground = () => {
 			description: vaultDescription,
 		})
 		setShowNameModal(false)
+		setNameError('')
 
 		toast.success('Vault details updated successfully!')
 	}
 
 	const handleCloseNameModal = () => {
 		setShowNameModal(false)
+		if (nameError) setNameError('')
 	}
 
 	const handleSaveEdits = (type) => {
 		switch (type) {
 			case 'prompt':
 				setGeneratedPrompt(editablePrompt)
+				setCurrentVaultItem({
+					initialPrompt: editablePrompt,
+				})
 				setIsEditingPrompt(false)
 				break
 			case 'refinedPrompt':
 				setRefinedPrompt(editableRefinedPrompt)
+				setCurrentVaultItem({
+					refinedPrompt: editableRefinedPrompt,
+				})
 				setIsEditingRefinedPrompt(false)
 				break
 			case 'content':
 				setGeneratedContent(editableContent)
+				setCurrentVaultItem({
+					generatedContent: editableContent,
+				})
 				setIsEditingContent(false)
 				break
 		}
@@ -722,7 +723,11 @@ const Playground = () => {
 	const renderTabs = () => {
 		const tabs = [
 			{ id: 'form', label: 'Form', enabled: !generatedPrompt },
-			{ id: 'initial-prompt', label: 'Prompt', enabled: !!generatedPrompt },
+			{
+				id: 'initial-prompt',
+				label: 'Prompt',
+				enabled: !!generatedPrompt,
+			},
 			{
 				id: 'refined-prompt',
 				label: 'Refined Prompt',
@@ -914,46 +919,65 @@ const Playground = () => {
 			</div>
 
 			<Card className='p-6'>
-				<div className='space-y-1'>
-					{' '}
-					{isEditingName ? (
-						<Textarea
-							value={vaultName}
-							onChange={(e) => setVaultName(e.target.value)}
-							onBlur={handleSaveName}
-							rows={1}
-							className='text-2xl font-bold text-gray-900 resize-none bg-transparent focus:outline-none h-[40px]'
-							autoFocus
-						/>
-					) : (
-						<h2
-							className='text-2xl font-bold text-gray-900 cursor-pointer h-[40px] flex items-center'
-							onClick={() => setIsEditingName(true)}
+				<div className='flex items-center space-x-2 group mb-3'>
+					{/* Name */}
+					<h2
+						className='text-xl font-bold text-gray-900 cursor-pointer'
+						onClick={handleOpenNameModal}
+					>
+						{currentVaultItem?.name || 'Untitled Vault'}
+					</h2>
+
+					{/* Icon for editing name */}
+					<button
+						onClick={handleOpenNameModal}
+						className='opacity-0 group-hover:opacity-100 transition-opacity text-gray-500 hover:text-gray-700'
+						aria-label='Edit Name'
+					>
+						<svg
+							xmlns='http://www.w3.org/2000/svg'
+							className='h-5 w-5'
+							fill='none'
+							viewBox='0 0 24 24'
+							stroke='currentColor'
+							strokeWidth={2}
 						>
-							{currentVaultItem?.name || 'Untitled Vault'}
-						</h2>
-					)}
-					{/* Description */}
-					{isEditingDescription ? (
-						<Textarea
-							value={vaultDescription}
-							onChange={(e) =>
-								setVaultDescription(e.target.value)
-							}
-							onBlur={handleSaveDescription}
-							rows={2}
-							className='text-gray-600 resize-none bg-transparent focus:outline-none h-[60px]'
-							autoFocus
-						/>
-					) : (
-						<p
-							className='text-gray-600 cursor-pointer h-[60px] flex items-top'
-							onClick={() => setIsEditingDescription(true)}
+							<path
+								strokeLinecap='round'
+								strokeLinejoin='round'
+								d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'
+							/>
+						</svg>
+					</button>
+				</div>
+				<div className='flex items-center space-x-2 group mb-3'>
+					<p
+						className='text-gray-600 cursor-pointer'
+						onClick={handleOpenNameModal}
+					>
+						{currentVaultItem?.description ||
+							'No description provided.'}
+					</p>
+					<button
+						onClick={handleOpenNameModal}
+						className='opacity-0 group-hover:opacity-100 transition-opacity text-gray-500 hover:text-gray-700'
+						aria-label='Edit Description'
+					>
+						<svg
+							xmlns='http://www.w3.org/2000/svg'
+							className='h-5 w-5'
+							fill='none'
+							viewBox='0 0 24 24'
+							stroke='currentColor'
+							strokeWidth={2}
 						>
-							{currentVaultItem?.description ||
-								'No description provided.'}
-						</p>
-					)}
+							<path
+								strokeLinecap='round'
+								strokeLinejoin='round'
+								d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'
+							/>
+						</svg>
+					</button>
 				</div>
 
 				{renderTabs()}
@@ -980,18 +1004,21 @@ const Playground = () => {
 			<Modal isOpen={showNameModal} onClose={handleCloseNameModal}>
 				<div className='p-6 space-y-4'>
 					<h3 className='text-lg font-semibold text-gray-900'>
-						Enter Vault Details
+						Edit Vault Item Name & Description
 					</h3>
-					<p className='text-sm text-gray-600'>
-						Please provide a Vault Name before continuing.
-					</p>
 					<div>
 						<label className='block text-sm font-medium text-gray-700'>
-							Name*
+							{nameError ? (
+							<p className='text-red-500'>
+								{nameError}
+							</p>) : 'Name*' }
 						</label>
 						<Textarea
 							value={vaultName}
-							onChange={(e) => setVaultName(e.target.value)}
+							onChange={(e) => {
+								setVaultName(e.target.value)
+								if (nameError) setNameError('')
+							}}
 							placeholder='Enter name'
 							className='mt-1'
 						/>
