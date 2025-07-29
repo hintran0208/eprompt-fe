@@ -7,7 +7,7 @@ import { usePlaygroundStore } from '../store/playgroundStore'
 import { generateAIContent } from '../lib/api';
 import { invoke } from '@tauri-apps/api/core';
 
-const SemanticSearch = ({ setCurrentView }) => {
+const SemanticSearch = ({ setCurrentView, isSpotlight }) => {
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearching, setIsSearching] = useState(false)
   const [searchResults, setSearchResults] = useState(null)
@@ -90,11 +90,24 @@ const SemanticSearch = ({ setCurrentView }) => {
     }
   }
 
-  const handleSelectTemplate = (result) => {
+  const handleSelectTemplate = async (prefix, result) => {
     setSearchQuery('')
-    setCurrentTemplate(result)
     setSearchResults(null)
-    setCurrentView('playground')
+    if (isSpotlight) {
+			// invoke('my_custom_command', { str: 'here bae' + result });
+			invoke('hide_spotlight')
+			try {
+				const prompt = renderDescription(prefix, result)
+				const aiContent = await generateAIContent(prompt)
+				invoke('my_custom_command', { str: aiContent })
+			}
+			catch (e) {
+				invoke('my_custom_command', { str: 'Err: ' + e.message })
+			}
+		} else {
+			setCurrentTemplate(result)
+			setCurrentView('playground')
+		}
   }
 
   const handleSelectVaultItem = (result) => {
@@ -229,10 +242,11 @@ const SemanticSearch = ({ setCurrentView }) => {
                                 : ''
                               }`}
                             onClick={
-                              prefix ===
+                              isSpotlight || prefix ===
                                 'template'
                                 ? () =>
                                   handleSelectTemplate(
+                                    prefix,
                                     result
                                   )
                                 : () => {
@@ -287,7 +301,7 @@ const SemanticSearch = ({ setCurrentView }) => {
 
   return (
     <div
-      className='bg-white border-b border-gray-200 p-4'
+      className='bg-transparent border-b border-gray-200 p-4'
       ref={containerRef}
     >
       <div className='max-w-4xl mx-auto'>
@@ -301,56 +315,58 @@ const SemanticSearch = ({ setCurrentView }) => {
               className='text-base'
             />
           </div>
-          <Button
-            onClick={handleSearch}
-            disabled={isSearching || !isValidQuery(searchQuery)}
-            className='px-6'
-          >
-            {isSearching ? (
-              <div className='flex items-center'>
-                <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2'></div>
-                Searching...
-              </div>
-            ) : (
-              <>
-                <svg
-                  className='w-4 h-4 mr-2'
-                  fill='none'
-                  viewBox='0 0 24 24'
-                  stroke='currentColor'
-                >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'
-                  />
-                </svg>
-                Search
-              </>
-            )}
-          </Button>
-          <Button
-            onClick={() =>
-              setShowAdvancedSearch(!showAdvancedSearch)
-            }
-            className='px-6'
-          >
-            <svg
-              className='w-4 h-4 mr-2'
-              fill='none'
-              viewBox='0 0 24 24'
-              stroke='currentColor'
+          { !isSpotlight && <>
+            <Button
+              onClick={handleSearch}
+              disabled={isSearching || !isValidQuery(searchQuery)}
+              className='px-6'
             >
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707l-6 6V20a1 1 0 01-1 1h-4a1 1 0 01-1-1v-7.293l-6-6A1 1 0 013 6V4z'
-              />
-            </svg>
-            Advanced
-          </Button>
+              {isSearching ? (
+                <div className='flex items-center'>
+                  <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2'></div>
+                  Searching...
+                </div>
+              ) : (
+                <>
+                  <svg
+                    className='w-4 h-4 mr-2'
+                    fill='none'
+                    viewBox='0 0 24 24'
+                    stroke='currentColor'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2}
+                      d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'
+                    />
+                  </svg>
+                  Search
+                </>
+              )}
+            </Button>
+            <Button
+              onClick={() =>
+                setShowAdvancedSearch(!showAdvancedSearch)
+              }
+              className='px-6'
+            >
+              <svg
+                className='w-4 h-4 mr-2'
+                fill='none'
+                viewBox='0 0 24 24'
+                stroke='currentColor'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth={2}
+                  d='M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707l-6 6V20a1 1 0 01-1 1h-4a1 1 0 01-1-1v-7.293l-6-6A1 1 0 013 6V4z'
+                />
+              </svg>
+              Advanced
+            </Button>
+          </>}
           {showAdvancedSearch && (
             <div className='absolute top-full mt-2 bg-white border border-gray-300 rounded shadow-md z-50 w-full p-4'>
               <div className='mb-4 text-xs text-gray-500 text-center'>
@@ -384,16 +400,17 @@ const SemanticSearch = ({ setCurrentView }) => {
         </div>
         {/* Hide advanced dropdown when search results are shown */}
         {!showAdvancedSearch && (isSearching || searchResults) && renderSearchResults()}
-        <div className='mt-2 text-xs text-gray-500'>
+        {!isSpotlight && <div className='mt-2 text-xs text-gray-500'>
           Try searching for &quot;content writing&quot;, &quot;code
           review&quot;, or &quot;email templates&quot;
-        </div>
+        </div>}
       </div>
     </div>
   )
 }
 SemanticSearch.propTypes = {
   setCurrentView: PropTypes.func.isRequired,
+  isSpotlight: PropTypes.bool,
 }
 
 export default SemanticSearch
