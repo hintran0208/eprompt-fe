@@ -171,7 +171,7 @@ const PromptVault = ({ setCurrentView }) => {
 				{loading
 					? Array.from({ length: 20 }).map((_, idx) => (
 							<SkeletonCard key={idx} />
-					  ))
+				))
 					: vaults.map((vault) => {
 							const status = getVaultStatus(vault)
 
@@ -298,7 +298,7 @@ const PromptVault = ({ setCurrentView }) => {
 									</div>
 								</Card>
 							)
-					  })}
+					})}
 			</div>
 
 			{vaults.length > 0 && (

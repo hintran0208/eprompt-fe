@@ -99,7 +99,7 @@ const TemplateLibrary = () => {
 				{loading
 					? Array.from({ length: 12 }).map((_, idx) => (
 							<SkeletonCard key={idx} />
-					  ))
+					))
 					: templates.map((template) => {
 							const isSelected =
 								currentTemplate?.id === template.id
@@ -191,7 +191,7 @@ const TemplateLibrary = () => {
 									</div>
 								</Card>
 							)
-					  })}
+					})}
 			</div>
 		</div>
 	)
