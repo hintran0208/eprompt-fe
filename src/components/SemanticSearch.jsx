@@ -29,7 +29,7 @@ const SemanticSearch = ({ setCurrentView }) => {
     }
   }, [searchResults, showAdvancedSearch])
 
-  const { templates, setCurrentTemplate, loadVaultItem } = usePlaygroundStore()
+  const { templates, setCurrentTemplate, loadVaultItem, setActiveTab } = usePlaygroundStore()
 
   const toast = useToast()
 
@@ -95,11 +95,12 @@ const SemanticSearch = ({ setCurrentView }) => {
     setCurrentView('playground')
   }
 
-  const handleSelectVaultItem = (result) => {
+  const handleSelectVaultItem = (result, prefix) => {
     setSearchQuery('')
     setCurrentTemplate(templates.find(t => t.id === result.templateId))
     loadVaultItem(result)
     setCurrentView('playground')
+    setActiveTab(prefix)
     setSearchResults(null)
   }
 
@@ -224,7 +225,7 @@ const SemanticSearch = ({ setCurrentView }) => {
                                   )
                                 : () => {
                                   handleSelectVaultItem(
-                                    result
+                                    result, prefix
                                   )
                                 }
                             }

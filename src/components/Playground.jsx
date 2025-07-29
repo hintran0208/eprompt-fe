@@ -723,9 +723,9 @@ const Playground = () => {
 	const renderTabs = () => {
 		const tabs = [
 			{ id: 'form', label: 'Form', enabled: !generatedPrompt },
-			{ id: 'prompt', label: 'Prompt', enabled: !!generatedPrompt },
+			{ id: 'initial-prompt', label: 'Prompt', enabled: !!generatedPrompt },
 			{
-				id: 'refined',
+				id: 'refined-prompt',
 				label: 'Refined Prompt',
 				enabled: !!refinedPrompt,
 			},
@@ -961,8 +961,8 @@ const Playground = () => {
 
 				<div className='mt-6'>
 					{activeTab === 'form' && renderForm()}
-					{activeTab === 'prompt' && renderPrompt()}
-					{activeTab === 'refined' && renderRefinedPrompt()}
+					{activeTab === 'initial-prompt' && renderPrompt()}
+					{activeTab === 'refined-prompt' && renderRefinedPrompt()}
 					{activeTab === 'content' && renderContent()}
 				</div>
 			</Card>
