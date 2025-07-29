@@ -42,19 +42,19 @@ export const usePlaygroundStore = create()(
 			setGeneratedPrompt: (prompt) =>
 				set({
 					generatedPrompt: prompt,
-					activeTab: prompt ? 'prompt' : 'form',
+					activeTab: prompt ? 'initial-prompt' : 'form',
 				}),
 
 			setRefinedPrompt: (prompt) =>
 				set({
 					refinedPrompt: prompt,
-					activeTab: prompt ? 'refined' : 'prompt',
+					activeTab: prompt ? 'refined-prompt' : 'initial-prompt',
 				}),
 
 			setGeneratedContent: (content) =>
 				set({
 					generatedContent: content,
-					activeTab: content ? 'content' : 'refined',
+					activeTab: content ? 'content' : 'refined-prompt',
 				}),
 
 			setActiveTab: (tab) => set({ activeTab: tab }),
