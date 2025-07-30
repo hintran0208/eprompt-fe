@@ -56,8 +56,6 @@ const AppLayout = () => {
               
               // Remove from localStorage to avoid using it again
               localStorage.removeItem('lastSelectedVaultItem');
-              localStorage.removeItem('lastSelectedVaultTemplate');
-              localStorage.removeItem('lastSelectedVaultTimestamp');
 
               setCurrentView('playground');
 
