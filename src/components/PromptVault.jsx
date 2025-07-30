@@ -59,18 +59,6 @@ const PromptVault = ({ setCurrentView }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString)
-    return (
-      date.toLocaleDateString() +
-      ' ' +
-      date.toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-    )
-  }
-
   const handleloadVaultItem = async (vault) => {
     const result = loadVaultItem(vault)
     if (result && typeof result.then === 'function') {
