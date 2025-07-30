@@ -82,7 +82,7 @@ const AppLayout = () => {
     };
     
     setupListener();
-  }, [handleTemplateFromStore, setActiveTab]);
+  }, [handleTemplateFromStore, setActiveTab, templates]);
 
   const handleNewSession = () => {
     clearCurrentSession();
