@@ -119,11 +119,6 @@ pub fn run() {
                                     ShortcutState::Pressed => {
                                         // Try to get the main window if it exists
                                         let main_window = app_handle.get_webview_window("main");
-                                        let mut main_window_was_focused = false;
-                                        
-                                        if let Some(main_window_ref) = &main_window {
-                                            main_window_was_focused = main_window_ref.is_focused().unwrap_or(false);
-                                        }
                                         
                                         if spotlight_window.is_focused().unwrap_or(false) {
                                             // Hide spotlight if it's focused

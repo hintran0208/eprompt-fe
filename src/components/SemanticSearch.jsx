@@ -14,22 +14,32 @@ const SemanticSearch = ({ setCurrentView, isSpotlight }) => {
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false)
   const containerRef = useRef(null)
   // Close search results and advanced dropdown when clicking outside
+  // Also close spotlight window if isSpotlight is true
   useEffect(() => {
-    if (!searchResults && !showAdvancedSearch) return
-    const handleClickOutside = (event) => {
+    if (!searchResults && !showAdvancedSearch && !isSpotlight) return
+    const handleClickOutside = async (event) => {
       if (
         containerRef.current &&
         !containerRef.current.contains(event.target)
       ) {
         setSearchResults(null)
         setShowAdvancedSearch(false)
+        
+        // If this is spotlight mode, hide the spotlight window
+        if (isSpotlight) {
+          try {
+            await invoke('hide_spotlight')
+          } catch (e) {
+            console.error('Error hiding spotlight:', e)
+          }
+        }
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [searchResults, showAdvancedSearch])
+  }, [searchResults, showAdvancedSearch, isSpotlight])
 
   const { templates, setCurrentTemplate, loadVaultItem, setActiveTab } = usePlaygroundStore()
 
