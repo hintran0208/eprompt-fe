@@ -38,10 +38,30 @@ fn hide_spotlight(app_handle: tauri::AppHandle) -> Result<(), String> {
         spotlight_window.hide().unwrap_or_default();
         println!("Spotlight window hidden programmatically");
         
-        // Try to focus the main window if it exists
+        // Try to focus the main window if it exists - improved cross-platform handling
         if let Some(main_window) = app_handle.get_webview_window("main") {
-            main_window.show().unwrap_or_default();
-            main_window.set_focus().unwrap_or_default();
+            // For Windows compatibility, we need to ensure the window is properly restored and focused
+            #[cfg(target_os = "windows")]
+            {
+                // On Windows, we might need to unminimize first
+                main_window.unminimize().unwrap_or_default();
+                // Then show the window
+                main_window.show().unwrap_or_default();
+                // Request focus
+                main_window.set_focus().unwrap_or_default();
+                // Additional Windows-specific focus attempt
+                main_window.set_always_on_top(true).unwrap_or_default();
+                std::thread::sleep(std::time::Duration::from_millis(50));
+                main_window.set_always_on_top(false).unwrap_or_default();
+            }
+            
+            #[cfg(not(target_os = "windows"))]
+            {
+                // For macOS and Linux
+                main_window.show().unwrap_or_default();
+                main_window.set_focus().unwrap_or_default();
+            }
+            
             println!("Main window focused after hiding spotlight");
         }
         
@@ -137,9 +157,28 @@ pub fn run() {
                                             // After hiding spotlight, we want to make sure the main app stays visible
                                             // Focus the main window if it exists to ensure the app stays in the foreground
                                             if let Some(main_window_ref) = &main_window {
-                                                // Make sure the main window is visible and focused
-                                                main_window_ref.show().unwrap_or_default();
-                                                main_window_ref.set_focus().unwrap_or_default();
+                                                // Cross-platform window focusing
+                                                #[cfg(target_os = "windows")]
+                                                {
+                                                    // On Windows, we might need to unminimize first
+                                                    main_window_ref.unminimize().unwrap_or_default();
+                                                    // Then show the window
+                                                    main_window_ref.show().unwrap_or_default();
+                                                    // Request focus
+                                                    main_window_ref.set_focus().unwrap_or_default();
+                                                    // Additional Windows-specific focus attempt
+                                                    main_window_ref.set_always_on_top(true).unwrap_or_default();
+                                                    std::thread::sleep(std::time::Duration::from_millis(50));
+                                                    main_window_ref.set_always_on_top(false).unwrap_or_default();
+                                                }
+                                                
+                                                #[cfg(not(target_os = "windows"))]
+                                                {
+                                                    // For macOS and Linux
+                                                    main_window_ref.show().unwrap_or_default();
+                                                    main_window_ref.set_focus().unwrap_or_default();
+                                                }
+                                                
                                                 println!("Main window focused after hiding spotlight");
                                             } else {
                                                 println!("No main window found to focus after hiding spotlight");

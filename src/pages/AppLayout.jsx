@@ -26,25 +26,27 @@ const AppLayout = () => {
       const unlisten = await listen('spotlight-hidden', () => {
         console.log('Spotlight hidden event received in main app - switching to playground view');
         
-        // Check if we have a template from localStorage as a backup
-        try {
-          const savedTemplate = localStorage.getItem('lastSelectedTemplate');
-          if (savedTemplate) {
-            const parsedTemplate = JSON.parse(savedTemplate);
-            console.log('Using template from localStorage:', parsedTemplate.name);
-            
-            // Use the stored function to handle template
-            handleTemplateFromStore(parsedTemplate);
-            
-            // Remove from localStorage to avoid using it again
-            localStorage.removeItem('lastSelectedTemplate');
+        // Add a small delay to ensure the main window is focused before processing
+        setTimeout(() => {
+          // Check if we have a template from localStorage as a backup
+          try {
+            const savedTemplate = localStorage.getItem('lastSelectedTemplate');
+            if (savedTemplate) {
+              const parsedTemplate = JSON.parse(savedTemplate);
+              
+              // Use the stored function to handle template
+              handleTemplateFromStore(parsedTemplate);
+              
+              // Remove from localStorage to avoid using it again
+              localStorage.removeItem('lastSelectedTemplate');
 
-            // When spotlight is hidden after template selection, switch to playground view
-            setCurrentView('playground');
+              // When spotlight is hidden after template selection, switch to playground view
+              setCurrentView('playground');
+            }
+          } catch (e) {
+            console.error('Error retrieving template from localStorage:', e);
           }
-        } catch (e) {
-          console.error('Error retrieving template from localStorage:', e);
-        }
+        }, 100); // Small delay to ensure window focus is complete
       });
       
       return () => {
