@@ -29,7 +29,7 @@ const SemanticSearch = ({ setCurrentView }) => {
     }
   }, [searchResults, showAdvancedSearch])
 
-  const { setCurrentTemplate } = usePlaygroundStore()
+  const { templates, setCurrentTemplate, loadVaultItem, setActiveTab } = usePlaygroundStore()
 
   const toast = useToast()
 
@@ -95,6 +95,25 @@ const SemanticSearch = ({ setCurrentView }) => {
     setCurrentView('playground')
   }
 
+  const handleSelectVaultItem = (result) => {
+    setSearchQuery('')
+    setCurrentTemplate(templates.find(t => t.id === result.templateId))
+    loadVaultItem(result)
+    setCurrentView('playground')
+
+    let activeTab = 'form'
+    if (result.generatedContent) {
+      activeTab = 'content'
+    } else if (result.refinedPrompt) {
+      activeTab = 'refined-prompt'
+    } else if (result.initialPrompt) {
+      activeTab = 'initial-prompt'
+    }
+
+    setActiveTab(activeTab)
+    setSearchResults(null)
+  }
+
   const renderRole = (prefix, result) => {
     if (prefix === 'template') {
       return (
@@ -130,7 +149,7 @@ const SemanticSearch = ({ setCurrentView }) => {
       case 'template':
         return result.description
       case 'vault':
-        return result.generatedContent
+        return result.description
       case 'initial-prompt':
         return result.initialPrompt
       case 'refined-prompt':
@@ -215,16 +234,15 @@ const SemanticSearch = ({ setCurrentView }) => {
                                     result
                                   )
                                 : () => {
-                                  toast.info(
-                                    'This feature is currently under development.',
-                                    6000
+                                  handleSelectVaultItem(
+                                    result
                                   )
                                 }
                             }
                           >
                             <div className='flex items-center gap-2'>
                               <span className='font-semibold text-base'>
-                                {result.name}
+                                {prefix === 'template' ? result.name : `${result.name} - ${result.templateName}`}
                               </span>
                               {renderRole(
                                 prefix,
