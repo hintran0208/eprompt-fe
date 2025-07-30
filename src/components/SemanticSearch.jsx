@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import PropTypes from 'prop-types'
 import { useToast } from '../hooks'
 import { Button, Input } from './ui'
@@ -7,12 +7,55 @@ import { usePlaygroundStore } from '../store/playgroundStore'
 import { invoke } from '@tauri-apps/api/core';
 import { cn } from '../lib/utils'
 
+const PREFIXES = [
+  'template',
+  'vault',
+  'initial-prompt',
+  'refined-prompt',
+  'content',
+]
+
 const SemanticSearch = ({ setCurrentView, isSpotlight }) => {
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearching, setIsSearching] = useState(false)
   const [searchResults, setSearchResults] = useState(null)
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false)
   const containerRef = useRef(null)
+  const inputRef = useRef(null)
+  
+  // Auto-focus input when in spotlight mode
+  useEffect(() => {
+    if (isSpotlight && inputRef.current) {
+      // Clear search query when spotlight opens fresh (helps with UX)
+      setSearchQuery('')
+      setSearchResults(null)
+      
+      // Small delay to ensure the spotlight window has fully opened
+      const timer = setTimeout(() => {
+        inputRef.current.focus()
+        inputRef.current.select() // Select any existing text for easy overwriting
+      }, 150)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [isSpotlight])
+  
+  // Additional focus handling for when the spotlight window becomes visible
+  useEffect(() => {
+    if (isSpotlight) {
+      const handleWindowFocus = () => {
+        if (inputRef.current) {
+          setTimeout(() => {
+            inputRef.current.focus()
+          }, 50)
+        }
+      }
+      
+      window.addEventListener('focus', handleWindowFocus)
+      return () => window.removeEventListener('focus', handleWindowFocus)
+    }
+  }, [isSpotlight])
+  
   // Close search results and advanced dropdown when clicking outside
   // Also close spotlight window if isSpotlight is true
   useEffect(() => {
@@ -45,15 +88,7 @@ const SemanticSearch = ({ setCurrentView, isSpotlight }) => {
 
   const toast = useToast()
 
-  const PREFIXES = [
-    'template',
-    'vault',
-    'initial-prompt',
-    'refined-prompt',
-    'content',
-  ]
-
-  const isValidQuery = (query) => {
+  const isValidQuery = useCallback((query) => {
     const prefixes = PREFIXES.map((prefix) => `${prefix}:`)
     let remainingQuery = query;
 
@@ -64,7 +99,7 @@ const SemanticSearch = ({ setCurrentView, isSpotlight }) => {
     })
 
     return remainingQuery.trim().length > 0
-  }
+  }, [])
 
   const handleAddPrefix = (prefix) => {
     const prefixWithColon = `${prefix}:`
@@ -76,7 +111,7 @@ const SemanticSearch = ({ setCurrentView, isSpotlight }) => {
     }
   }
 
-  const handleSearch = async () => {
+  const handleSearch = useCallback(async () => {
     if (!searchQuery.trim()) return
     setIsSearching(true)
     setShowAdvancedSearch(false) // Hide advanced dropdown when showing results
@@ -91,7 +126,7 @@ const SemanticSearch = ({ setCurrentView, isSpotlight }) => {
       toast.error('Error during search', 6000)
     }
     setIsSearching(false)
-  }
+  }, [searchQuery, setIsSearching, setShowAdvancedSearch, setSearchResults, toast])
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -99,6 +134,17 @@ const SemanticSearch = ({ setCurrentView, isSpotlight }) => {
       handleSearch()
     }
   }
+  
+  // Auto-search in spotlight mode when user stops typing
+  useEffect(() => {
+    if (isSpotlight && searchQuery.trim() && isValidQuery(searchQuery)) {
+      const timer = setTimeout(() => {
+        handleSearch()
+      }, 1000) // Wait 1 second after user stops typing
+      
+      return () => clearTimeout(timer)
+    }
+  }, [searchQuery, isSpotlight, handleSearch, isValidQuery])
 
   const handleSelectTemplate = async (result) => {
     setSearchQuery('')
@@ -335,6 +381,7 @@ const SemanticSearch = ({ setCurrentView, isSpotlight }) => {
         <div className='flex gap-3 relative'>
           <div className='flex-1'>
             <Input
+              ref={inputRef}
               placeholder='Search prompts and templates with natural language...'
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
