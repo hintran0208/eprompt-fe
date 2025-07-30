@@ -9,16 +9,20 @@ import { listen } from '@tauri-apps/api/event';
 
 const AppLayout = () => {
   const [currentView, setCurrentView] = useState('templates');
-  const { currentTemplate, setCurrentTemplate, clearCurrentSession } = usePlaygroundStore();
+  const { currentTemplate, setCurrentTemplate, clearCurrentSession, loadVaultItem, setActiveTab, templates } = usePlaygroundStore();
   
   // Create a stable callback function that won't change between renders
-  const handleTemplateFromStore = useCallback((template) => {
+  const handleTemplateFromStore = useCallback((template, vaultItem) => {
     if (!currentTemplate) {
       clearCurrentSession();
       setCurrentTemplate(template);
+      if (vaultItem) {
+        console.log('Loading vault item:', vaultItem);
+        loadVaultItem(vaultItem);
+      }
     }
-  }, [currentTemplate, clearCurrentSession, setCurrentTemplate]);
-  
+  }, [currentTemplate, clearCurrentSession, setCurrentTemplate, loadVaultItem]);
+
   // Listen for spotlight-hidden event
   useEffect(() => {
 
@@ -31,6 +35,8 @@ const AppLayout = () => {
           // Check if we have a template from localStorage as a backup
           try {
             const savedTemplate = localStorage.getItem('lastSelectedTemplate');
+            const savedVaultItem = localStorage.getItem('lastSelectedVaultItem');
+            
             if (savedTemplate) {
               const parsedTemplate = JSON.parse(savedTemplate);
               
@@ -42,6 +48,29 @@ const AppLayout = () => {
 
               // When spotlight is hidden after template selection, switch to playground view
               setCurrentView('playground');
+            }
+            if (savedVaultItem) {
+              const parsedVaultItem = JSON.parse(savedVaultItem);
+              const curTemplate = templates.find(t => t.id === parsedVaultItem.templateId)
+              handleTemplateFromStore(curTemplate, parsedVaultItem);
+              
+              // Remove from localStorage to avoid using it again
+              localStorage.removeItem('lastSelectedVaultItem');
+              localStorage.removeItem('lastSelectedVaultTemplate');
+              localStorage.removeItem('lastSelectedVaultTimestamp');
+
+              setCurrentView('playground');
+
+              let activeTab = 'form'
+              if (parsedVaultItem.generatedContent) {
+                activeTab = 'content';
+              } else if (parsedVaultItem.refinedPrompt) {
+                activeTab = 'refined-prompt';
+              } else if (parsedVaultItem.initialPrompt) {
+                activeTab = 'initial-prompt';
+              }
+
+              setActiveTab(activeTab);
             }
           } catch (e) {
             console.error('Error retrieving template from localStorage:', e);
@@ -55,7 +84,7 @@ const AppLayout = () => {
     };
     
     setupListener();
-  }, [handleTemplateFromStore]);
+  }, [handleTemplateFromStore, setActiveTab]);
 
   const handleNewSession = () => {
     clearCurrentSession();

@@ -100,9 +100,8 @@ const SemanticSearch = ({ setCurrentView, isSpotlight }) => {
     }
   }
 
-  const handleSelectTemplate = async (prefix, result) => {
+  const handleSelectTemplate = async (result) => {
     setSearchQuery('')
-    setSearchResults(null)
     
     // Make sure we have the result object with all properties
     console.log('Template selected:', result)
@@ -123,24 +122,38 @@ const SemanticSearch = ({ setCurrentView, isSpotlight }) => {
       setCurrentTemplate(result)
       setCurrentView('playground')
     }
+    setSearchResults(null)
   }
 
-  const handleSelectVaultItem = (result) => {
+  const handleSelectVaultItem = async (result) => {
     setSearchQuery('')
-    setCurrentTemplate(templates.find(t => t.id === result.templateId))
-    loadVaultItem(result)
-    setCurrentView('playground')
+    
+    if (isSpotlight) {
+      try {
+        localStorage.setItem('lastSelectedVaultItem', JSON.stringify(result))
+        
+        // First hide the spotlight window
+        await invoke('hide_spotlight')
+      } catch (e) {
+        console.error('Error hiding spotlight:', e)
+        toast.error(`Error: ${e.message}`, 3000)
+      }
+    } else {
+      setCurrentTemplate(templates.find(t => t.id === result.templateId))
+      loadVaultItem(result)
+      setCurrentView('playground')
 
-    let activeTab = 'form'
-    if (result.generatedContent) {
-      activeTab = 'content'
-    } else if (result.refinedPrompt) {
-      activeTab = 'refined-prompt'
-    } else if (result.initialPrompt) {
-      activeTab = 'initial-prompt'
+      let activeTab = 'form'
+      if (result.generatedContent) {
+        activeTab = 'content'
+      } else if (result.refinedPrompt) {
+        activeTab = 'refined-prompt'
+      } else if (result.initialPrompt) {
+        activeTab = 'initial-prompt'
+      }
+
+      setActiveTab(activeTab)
     }
-
-    setActiveTab(activeTab)
     setSearchResults(null)
   }
 
@@ -257,11 +270,10 @@ const SemanticSearch = ({ setCurrentView, isSpotlight }) => {
                                 : ''
                               }`}
                             onClick={
-                              isSpotlight || prefix ===
+                              prefix ===
                                 'template'
                                 ? () =>
                                   handleSelectTemplate(
-                                    prefix,
                                     result
                                   )
                                 : () => {
