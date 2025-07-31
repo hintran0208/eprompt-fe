@@ -40,7 +40,7 @@ const SemanticSearch = ({ setCurrentView, isSpotlight }) => {
     }
   }, [isSpotlight])
   
-  // Additional focus handling for when the spotlight window becomes visible
+    // Additional focus handling for when the spotlight window becomes visible
   useEffect(() => {
     if (isSpotlight) {
       const handleWindowFocus = () => {
@@ -134,7 +134,7 @@ const SemanticSearch = ({ setCurrentView, isSpotlight }) => {
       handleSearch()
     }
   }
-  
+
   // Auto-search in spotlight mode when user stops typing
   useEffect(() => {
     if (isSpotlight && searchQuery.trim() && isValidQuery(searchQuery)) {
@@ -146,7 +146,7 @@ const SemanticSearch = ({ setCurrentView, isSpotlight }) => {
     }
   }, [searchQuery, isSpotlight, handleSearch, isValidQuery])
 
-  const handleSelectTemplate = async (result) => {
+  const handleSelectTemplate = useCallback(async (result) => {
     setSearchQuery('')
     
     // Make sure we have the result object with all properties
@@ -169,9 +169,9 @@ const SemanticSearch = ({ setCurrentView, isSpotlight }) => {
       setCurrentView('playground')
     }
     setSearchResults(null)
-  }
+  }, [isSpotlight, toast, setCurrentTemplate, setCurrentView])
 
-  const handleSelectVaultItem = async (result) => {
+  const handleSelectVaultItem = useCallback(async (result) => {
     setSearchQuery('')
     
     if (isSpotlight) {
@@ -201,7 +201,7 @@ const SemanticSearch = ({ setCurrentView, isSpotlight }) => {
       setActiveTab(activeTab)
     }
     setSearchResults(null)
-  }
+  }, [isSpotlight, toast, templates, setCurrentTemplate, loadVaultItem, setCurrentView, setActiveTab])
 
   const renderRole = (prefix, result) => {
     if (prefix === 'template') {
