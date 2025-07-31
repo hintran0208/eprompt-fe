@@ -1,7 +1,20 @@
 // Utility functions for the application
+import { invoke } from '@tauri-apps/api/core';
 
 export const cn = (...classes) => {
   return classes.filter(Boolean).join(" ");
+};
+
+// Tauri-specific clipboard function that works on all platforms
+export const copyToClipboardTauri = async (text) => {
+  try {
+    await invoke('copy_clipboard', { text });
+    console.log('Successfully copied to clipboard via Tauri');
+    return true;
+  } catch (error) {
+    console.error('Failed to copy to clipboard via Tauri:', error);
+    return false;
+  }
 };
 
 export const copyToClipboard = async (text) => {

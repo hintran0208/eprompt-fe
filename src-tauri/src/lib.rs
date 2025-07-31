@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use enigo::{Enigo, Keyboard, Settings};
+use enigo::{Enigo, Settings};
 use serde::Serialize;
 use tauri::Emitter;
 use tauri::Manager;
@@ -16,17 +16,18 @@ struct PermissionMessage {
 pub const SPOTLIGHT_LABEL: &str = "spotlight";
 
 #[tauri::command]
-fn my_custom_command(str: &str) -> Result<(), String> {
-    match Enigo::new(&Settings::default()) {
-        Ok(mut enigo) => {
-            let _ = enigo.text(str);
-            println!("Inserted: {:}", str);
+fn copy_clipboard(app_handle: tauri::AppHandle, text: &str) -> Result<(), String> {
+    use tauri_plugin_clipboard_manager::ClipboardExt;
+    
+    match app_handle.clipboard().write_text(text) {
+        Ok(_) => {
+            println!("Text copied to clipboard: {}", text);
             Ok(())
         }
-        Err(e) => Err(format!(
-            "Failed to create Enigo: {:?}. Please check if your app has Accessibility permissions.",
-            e
-        )),
+        Err(e) => {
+            eprintln!("Failed to copy text to clipboard: {:?}", e);
+            Err(format!("Failed to copy text to clipboard: {:?}", e))
+        }
     }
 }
 
@@ -34,13 +35,13 @@ fn my_custom_command(str: &str) -> Result<(), String> {
 fn bring_to_foreground(app_handle: tauri::AppHandle) -> Result<(), String> {
     if let Some(main_window) = app_handle.get_webview_window("main") {
         println!("Bringing main window to foreground...");
-        
+
         #[cfg(target_os = "windows")]
         {
             // Windows specific - more aggressive approach
             main_window.unminimize().unwrap_or_default();
             main_window.show().unwrap_or_default();
-            
+
             // Try multiple times with different approaches
             for i in 0..3 {
                 println!("Windows focus attempt {}", i + 1);
@@ -52,27 +53,27 @@ fn bring_to_foreground(app_handle: tauri::AppHandle) -> Result<(), String> {
                 std::thread::sleep(std::time::Duration::from_millis(50));
             }
         }
-        
+
         #[cfg(target_os = "macos")]
         {
             // macOS specific - use NSApplication activation
             main_window.unminimize().unwrap_or_default();
             main_window.show().unwrap_or_default();
-            
+
             // Try multiple focus attempts
             for i in 0..3 {
                 println!("macOS focus attempt {}", i + 1);
                 main_window.set_focus().unwrap_or_default();
                 std::thread::sleep(std::time::Duration::from_millis(100));
             }
-            
+
             // Force to front with always on top
             main_window.set_always_on_top(true).unwrap_or_default();
             std::thread::sleep(std::time::Duration::from_millis(200));
             main_window.set_always_on_top(false).unwrap_or_default();
             main_window.set_focus().unwrap_or_default();
         }
-        
+
         #[cfg(target_os = "linux")]
         {
             main_window.unminimize().unwrap_or_default();
@@ -81,7 +82,7 @@ fn bring_to_foreground(app_handle: tauri::AppHandle) -> Result<(), String> {
             std::thread::sleep(std::time::Duration::from_millis(100));
             main_window.set_focus().unwrap_or_default();
         }
-        
+
         println!("Main window brought to foreground");
         Ok(())
     } else {
@@ -92,24 +93,26 @@ fn bring_to_foreground(app_handle: tauri::AppHandle) -> Result<(), String> {
 #[tauri::command]
 fn activate_app(app_handle: tauri::AppHandle) -> Result<(), String> {
     println!("Activating app...");
-    
+
     // Try to get the main window
     let main_window = app_handle.get_webview_window("main");
-    
+
     if let Some(window) = main_window {
         // Main window exists, just bring it to front
         println!("Main window exists, bringing to foreground...");
         window.unminimize().unwrap_or_default();
         window.show().unwrap_or_default();
-        window.request_user_attention(Some(tauri::UserAttentionType::Informational)).unwrap_or_default();
-        
+        window
+            .request_user_attention(Some(tauri::UserAttentionType::Informational))
+            .unwrap_or_default();
+
         #[cfg(target_os = "macos")]
         {
             window.set_focus().unwrap_or_default();
             std::thread::sleep(std::time::Duration::from_millis(100));
             window.set_focus().unwrap_or_default();
         }
-        
+
         #[cfg(target_os = "windows")]
         {
             window.set_focus().unwrap_or_default();
@@ -117,23 +120,23 @@ fn activate_app(app_handle: tauri::AppHandle) -> Result<(), String> {
             std::thread::sleep(std::time::Duration::from_millis(200));
             window.set_always_on_top(false).unwrap_or_default();
         }
-        
+
         #[cfg(target_os = "linux")]
         {
             window.set_focus().unwrap_or_default();
         }
-        
+
         println!("Existing main window activated");
     } else {
         // No main window exists, create a new one
         println!("No main window found, creating new main window...");
-        
+
         let webview_url = tauri::WebviewUrl::App("index.html".into());
         match tauri::WebviewWindowBuilder::new(&app_handle, "main", webview_url)
             .title("E-Prompt Assistant")
             .inner_size(1200.0, 800.0)
             .center()
-            .build() 
+            .build()
         {
             Ok(new_window) => {
                 new_window.show().unwrap_or_default();
@@ -146,7 +149,7 @@ fn activate_app(app_handle: tauri::AppHandle) -> Result<(), String> {
             }
         }
     }
-    
+
     println!("App activation completed");
     Ok(())
 }
@@ -154,7 +157,7 @@ fn activate_app(app_handle: tauri::AppHandle) -> Result<(), String> {
 #[tauri::command]
 fn ensure_main_window(app_handle: tauri::AppHandle) -> Result<(), String> {
     println!("Ensuring main window exists...");
-    
+
     if app_handle.get_webview_window("main").is_none() {
         println!("Creating new main window...");
         let webview_url = tauri::WebviewUrl::App("index.html".into());
@@ -162,7 +165,7 @@ fn ensure_main_window(app_handle: tauri::AppHandle) -> Result<(), String> {
             .title("E-Prompt Assistant")
             .inner_size(1200.0, 800.0)
             .center()
-            .build() 
+            .build()
         {
             Ok(new_window) => {
                 new_window.show().unwrap_or_default();
@@ -188,7 +191,7 @@ fn hide_spotlight(app_handle: tauri::AppHandle) -> Result<(), String> {
         // Hide the spotlight window
         spotlight_window.hide().unwrap_or_default();
         println!("Spotlight window hidden programmatically");
-        
+
         // Emit the event first, then try to activate the main window
         let payload = serde_json::json!({});
         if let Err(e) = app_handle.emit("spotlight-hidden", payload) {
@@ -196,55 +199,59 @@ fn hide_spotlight(app_handle: tauri::AppHandle) -> Result<(), String> {
         } else {
             println!("Spotlight-hidden event emitted successfully");
         }
-        
+
         // Try to activate or create the main window after a short delay
-        let app_handle_clone = app_handle.clone();
-        std::thread::spawn(move || {
-            std::thread::sleep(std::time::Duration::from_millis(200)); // Back to shorter delay
-            
-            if let Some(main_window) = app_handle_clone.get_webview_window("main") {
-                // Main window exists, activate it
-                main_window.unminimize().unwrap_or_default();
-                main_window.show().unwrap_or_default();
-                main_window.set_focus().unwrap_or_default();
-                
-                // Try the always-on-top trick
-                main_window.set_always_on_top(true).unwrap_or_default();
-                std::thread::sleep(std::time::Duration::from_millis(150));
-                main_window.set_always_on_top(false).unwrap_or_default();
-                main_window.set_focus().unwrap_or_default();
-                
-                println!("Existing main window activated in background thread");
-            } else {
-                // No main window exists, create a new one
-                println!("No main window found in background thread, creating new one...");
-                let webview_url = tauri::WebviewUrl::App("index.html".into());
-                if let Ok(new_window) = tauri::WebviewWindowBuilder::new(&app_handle_clone, "main", webview_url)
-                    .title("E-Prompt Assistant")
-                    .inner_size(1200.0, 800.0)
-                    .center()
-                    .build() 
-                {
-                    new_window.show().unwrap_or_default();
-                    new_window.set_focus().unwrap_or_default();
-                    println!("New main window created in background thread");
-                    
-                    // Give the new window extra time to fully initialize
-                    std::thread::sleep(std::time::Duration::from_millis(1000));
-                    new_window.set_focus().unwrap_or_default();
-                    
-                    // IMPORTANT: Emit the spotlight-hidden event again for the new window
-                    // This is crucial when the main window was recreated after being closed
-                    let payload = serde_json::json!({});
-                    if let Err(e) = app_handle_clone.emit("spotlight-hidden", payload) {
-                        eprintln!("Failed to emit spotlight-hidden event for new window: {:?}", e);
-                    } else {
-                        println!("Spotlight-hidden event emitted for new main window");
-                    }
-                }
-            }
-        });
-        
+        // let app_handle_clone = app_handle.clone();
+        // std::thread::spawn(move || {
+        //     std::thread::sleep(std::time::Duration::from_millis(200)); // Back to shorter delay
+
+        //     if let Some(main_window) = app_handle_clone.get_webview_window("main") {
+        //         // Main window exists, activate it
+        //         main_window.unminimize().unwrap_or_default();
+        //         main_window.show().unwrap_or_default();
+        //         main_window.set_focus().unwrap_or_default();
+
+        //         // Try the always-on-top trick
+        //         main_window.set_always_on_top(true).unwrap_or_default();
+        //         std::thread::sleep(std::time::Duration::from_millis(150));
+        //         main_window.set_always_on_top(false).unwrap_or_default();
+        //         main_window.set_focus().unwrap_or_default();
+
+        //         println!("Existing main window activated in background thread");
+        //     } else {
+        //         // No main window exists, create a new one
+        //         println!("No main window found in background thread, creating new one...");
+        //         let webview_url = tauri::WebviewUrl::App("index.html".into());
+        //         if let Ok(new_window) =
+        //             tauri::WebviewWindowBuilder::new(&app_handle_clone, "main", webview_url)
+        //                 .title("E-Prompt Assistant")
+        //                 .inner_size(1200.0, 800.0)
+        //                 .center()
+        //                 .build()
+        //         {
+        //             new_window.show().unwrap_or_default();
+        //             new_window.set_focus().unwrap_or_default();
+        //             println!("New main window created in background thread");
+
+        //             // Give the new window extra time to fully initialize
+        //             std::thread::sleep(std::time::Duration::from_millis(1000));
+        //             new_window.set_focus().unwrap_or_default();
+
+        //             // IMPORTANT: Emit the spotlight-hidden event again for the new window
+        //             // This is crucial when the main window was recreated after being closed
+        //             let payload = serde_json::json!({});
+        //             if let Err(e) = app_handle_clone.emit("spotlight-hidden", payload) {
+        //                 eprintln!(
+        //                     "Failed to emit spotlight-hidden event for new window: {:?}",
+        //                     e
+        //                 );
+        //             } else {
+        //                 println!("Spotlight-hidden event emitted for new main window");
+        //             }
+        //         }
+        //     }
+        // });
+
         Ok(())
     } else {
         Err("Spotlight window not found".to_string())
@@ -254,8 +261,9 @@ fn hide_spotlight(app_handle: tauri::AppHandle) -> Result<(), String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_shell::init())
-        .invoke_handler(tauri::generate_handler![my_custom_command, hide_spotlight, bring_to_foreground, activate_app, ensure_main_window])
+        .invoke_handler(tauri::generate_handler![copy_clipboard, hide_spotlight, bring_to_foreground, activate_app, ensure_main_window])
         .setup(|app| {
             // Removed unused handle variable
             

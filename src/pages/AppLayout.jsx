@@ -6,7 +6,7 @@ import PromptVault from '../components/PromptVault';
 import { usePlaygroundStore } from '../store/playgroundStore';
 import { Button } from '../components/ui';
 import { listen } from '@tauri-apps/api/event';
-import { invoke } from '@tauri-apps/api/core';
+// import { invoke } from '@tauri-apps/api/core';
 
 const AppLayout = () => {
   const [currentView, setCurrentView] = useState('templates');
@@ -32,17 +32,17 @@ const AppLayout = () => {
         console.log('Spotlight hidden event received in main app');
         
         // First, ensure main window exists and try to activate the app
-        try {
-          console.log('Ensuring main window exists...');
-          await invoke('ensure_main_window');
-          console.log('Main window ensured');
+        // try {
+        //   console.log('Ensuring main window exists...');
+        //   await invoke('ensure_main_window');
+        //   console.log('Main window ensured');
           
-          console.log('Attempting to activate app...');
-          await invoke('activate_app');
-          console.log('App activation command completed');
-        } catch (e) {
-          console.error('Error activating app:', e);
-        }
+        //   console.log('Attempting to activate app...');
+        //   await invoke('activate_app');
+        //   console.log('App activation command completed');
+        // } catch (e) {
+        //   console.error('Error activating app:', e);
+        // }
         
         // Add a longer delay to ensure the main window is fully loaded before processing
         // This is especially important when the main window was just recreated

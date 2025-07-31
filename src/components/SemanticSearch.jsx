@@ -5,7 +5,7 @@ import { Button, Input } from './ui'
 import { searchPrompts } from '../lib/api'
 import { usePlaygroundStore } from '../store/playgroundStore'
 import { invoke } from '@tauri-apps/api/core';
-import { cn } from '../lib/utils'
+import { cn, copyToClipboardTauri } from '../lib/utils'
 
 const PREFIXES = [
   'template',
@@ -156,8 +156,13 @@ const SemanticSearch = ({ setCurrentView, isSpotlight }) => {
       try {
         // Use localStorage as an additional backup to ensure the selection persists
         localStorage.setItem('lastSelectedTemplate', JSON.stringify(result))
-        
-        // First hide the spotlight window
+        const copyResult = await copyToClipboardTauri(result.template);
+        if (!copyResult) {
+          toast.error(`Failed to copy template "${result.name}" to clipboard`, 3000)
+        }  else {
+          toast.success(`Copied template "${result.name}" to clipboard`, 3000)
+        }
+        // Hide spotlight immediately for better UX
         await invoke('hide_spotlight')
       } catch (e) {
         console.error('Error hiding spotlight:', e)
@@ -171,13 +176,36 @@ const SemanticSearch = ({ setCurrentView, isSpotlight }) => {
     setSearchResults(null)
   }, [isSpotlight, toast, setCurrentTemplate, setCurrentView])
 
-  const handleSelectVaultItem = useCallback(async (result) => {
+  const handleSelectVaultItem = useCallback(async (prefix, result) => {
     setSearchQuery('')
     
     if (isSpotlight) {
       try {
         localStorage.setItem('lastSelectedVaultItem', JSON.stringify(result))
+        let copyResult = false
+        switch (prefix) {
+          case 'content':
+            copyResult = await copyToClipboardTauri(result.generatedContent)
+            break;
+          case 'refined-prompt':
+            copyResult = await copyToClipboardTauri(result.refinedPrompt)
+            break;
+          case 'initial-prompt':
+            copyResult = await copyToClipboardTauri(result.initialPrompt)
+            break;
+          case 'vault':
+            copyResult = await copyToClipboardTauri(result.generatedContent || result.refinedPrompt || result.initialPrompt)
+            break;
+          default:
+            copyResult = await copyToClipboardTauri(result.template)
+            break;
+        } 
         
+        if (!copyResult) {
+          toast.error(`Failed to copy ${prefix} "${result.name}" to clipboard`, 3000)
+        } else {
+          toast.success(`Copied ${prefix} "${result.name}" to clipboard`, 3000)
+        }
         // First hide the spotlight window
         await invoke('hide_spotlight')
       } catch (e) {
@@ -324,6 +352,7 @@ const SemanticSearch = ({ setCurrentView, isSpotlight }) => {
                                   )
                                 : () => {
                                   handleSelectVaultItem(
+                                    prefix,
                                     result
                                   )
                                 }
