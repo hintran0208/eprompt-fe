@@ -13,6 +13,19 @@ export const copyToClipboardTauri = async (text) => {
     return true;
   } catch (error) {
     console.error('Failed to copy to clipboard via Tauri:', error);
+    
+    // Try fallback method on Windows
+    if (window.__TAURI__ && navigator.platform.toLowerCase().includes('win')) {
+      console.log('Trying Windows fallback clipboard method...');
+      try {
+        await invoke('copy_clipboard_fallback', { text });
+        console.log('Successfully copied to clipboard via Windows fallback');
+        return true;
+      } catch (fallbackError) {
+        console.error('Windows fallback also failed:', fallbackError);
+      }
+    }
+    
     return false;
   }
 };

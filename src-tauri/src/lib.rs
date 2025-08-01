@@ -19,15 +19,122 @@ pub const SPOTLIGHT_LABEL: &str = "spotlight";
 fn copy_clipboard(app_handle: tauri::AppHandle, text: &str) -> Result<(), String> {
     use tauri_plugin_clipboard_manager::ClipboardExt;
     
+    println!("Attempting to copy text to clipboard: '{}'", text);
+    println!("Text length: {}", text.len());
+    println!("Operating system: {}", std::env::consts::OS);
+    
+    // Windows-specific checks
+    #[cfg(target_os = "windows")]
+    {
+        println!("Running on Windows - checking clipboard access");
+        
+        // Try to check if we can access clipboard at all
+        match app_handle.clipboard().read_text() {
+            Ok(current_content) => {
+                println!("Current clipboard content: '{}'", current_content);
+            }
+            Err(e) => {
+                println!("Warning: Could not read current clipboard content: {:?}", e);
+            }
+        }
+    }
+    
     match app_handle.clipboard().write_text(text) {
         Ok(_) => {
-            println!("Text copied to clipboard: {}", text);
+            println!("Text copied to clipboard successfully: {}", text);
+            
+            // Verify by reading back (for debugging)
+            match app_handle.clipboard().read_text() {
+                Ok(read_text) => {
+                    println!("Verification: clipboard now contains: '{}'", read_text);
+                    if read_text == text {
+                        println!("Clipboard verification successful");
+                    } else {
+                        println!("WARNING: Clipboard verification failed - content mismatch");
+                        println!("Expected: '{}'", text);
+                        println!("Actual: '{}'", read_text);
+                    }
+                }
+                Err(e) => {
+                    println!("Could not verify clipboard content: {:?}", e);
+                }
+            }
+            
             Ok(())
         }
         Err(e) => {
             eprintln!("Failed to copy text to clipboard: {:?}", e);
+            eprintln!("Error type: {}", std::any::type_name_of_val(&e));
+            
+            #[cfg(target_os = "windows")]
+            {
+                eprintln!("Windows-specific debugging:");
+                eprintln!("This might be a permission issue or the clipboard might be locked by another application");
+                eprintln!("Common causes on Windows:");
+                eprintln!("1. Another application has exclusive clipboard access");
+                eprintln!("2. The application doesn't have proper clipboard permissions");
+                eprintln!("3. A clipboard manager is interfering");
+            }
+            
             Err(format!("Failed to copy text to clipboard: {:?}", e))
         }
+    }
+}
+
+#[tauri::command]
+fn copy_clipboard_fallback(text: &str) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        use std::process::Command;
+        use std::io::Write;
+        
+        println!("Using Windows cmd fallback for clipboard");
+        
+        // Use PowerShell instead of cmd for better Unicode support
+        let mut ps_cmd = Command::new("powershell");
+        ps_cmd.args(&["-Command", &format!("Set-Clipboard -Value '{}'", text.replace("'", "''"))]);
+        
+        match ps_cmd.output() {
+            Ok(output) => {
+                if output.status.success() {
+                    println!("Successfully copied to clipboard using PowerShell");
+                    Ok(())
+                } else {
+                    let error = String::from_utf8_lossy(&output.stderr);
+                    println!("PowerShell failed, trying cmd with echo/clip: {}", error);
+                    
+                    // Fallback to cmd with pipe
+                    let mut clip_process = Command::new("cmd")
+                        .args(&["/C", "clip"])
+                        .stdin(std::process::Stdio::piped())
+                        .spawn()
+                        .map_err(|e| format!("Failed to spawn clip process: {}", e))?;
+                    
+                    if let Some(stdin) = clip_process.stdin.as_mut() {
+                        stdin.write_all(text.as_bytes())
+                            .map_err(|e| format!("Failed to write to clip stdin: {}", e))?;
+                    }
+                    
+                    let output = clip_process.wait_with_output()
+                        .map_err(|e| format!("Failed to wait for clip process: {}", e))?;
+                    
+                    if output.status.success() {
+                        println!("Successfully copied to clipboard using cmd/clip");
+                        Ok(())
+                    } else {
+                        Err("Both PowerShell and cmd clipboard methods failed".to_string())
+                    }
+                }
+            }
+            Err(e) => {
+                Err(format!("Failed to execute PowerShell: {}", e))
+            }
+        }
+    }
+    
+    #[cfg(not(target_os = "windows"))]
+    {
+        Err("Fallback clipboard only available on Windows".to_string())
     }
 }
 
@@ -263,7 +370,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_shell::init())
-        .invoke_handler(tauri::generate_handler![copy_clipboard, hide_spotlight, bring_to_foreground, activate_app, ensure_main_window])
+        .invoke_handler(tauri::generate_handler![copy_clipboard, copy_clipboard_fallback, hide_spotlight, bring_to_foreground, activate_app, ensure_main_window])
         .setup(|app| {
             // Removed unused handle variable
             
