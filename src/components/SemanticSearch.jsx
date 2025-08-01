@@ -1,47 +1,94 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import PropTypes from 'prop-types'
 import { useToast } from '../hooks'
 import { Button, Input } from './ui'
 import { searchPrompts } from '../lib/api'
 import { usePlaygroundStore } from '../store/playgroundStore'
+import { invoke } from '@tauri-apps/api/core';
+import { cn, copyToClipboardTauri } from '../lib/utils'
 
-const SemanticSearch = ({ setCurrentView }) => {
+const PREFIXES = [
+  'template',
+  'vault',
+  'initial-prompt',
+  'refined-prompt',
+  'content',
+]
+
+const SemanticSearch = ({ setCurrentView, isSpotlight }) => {
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearching, setIsSearching] = useState(false)
   const [searchResults, setSearchResults] = useState(null)
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false)
   const containerRef = useRef(null)
-  // Close search results and advanced dropdown when clicking outside
+  const inputRef = useRef(null)
+  
+  // Auto-focus input when in spotlight mode
   useEffect(() => {
-    if (!searchResults && !showAdvancedSearch) return
-    const handleClickOutside = (event) => {
+    if (isSpotlight && inputRef.current) {
+      // Clear search query when spotlight opens fresh (helps with UX)
+      setSearchQuery('')
+      setSearchResults(null)
+      
+      // Small delay to ensure the spotlight window has fully opened
+      const timer = setTimeout(() => {
+        inputRef.current.focus()
+        inputRef.current.select() // Select any existing text for easy overwriting
+      }, 150)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [isSpotlight])
+  
+    // Additional focus handling for when the spotlight window becomes visible
+  useEffect(() => {
+    if (isSpotlight) {
+      const handleWindowFocus = () => {
+        if (inputRef.current) {
+          setTimeout(() => {
+            inputRef.current.focus()
+          }, 50)
+        }
+      }
+      
+      window.addEventListener('focus', handleWindowFocus)
+      return () => window.removeEventListener('focus', handleWindowFocus)
+    }
+  }, [isSpotlight])
+  
+  // Close search results and advanced dropdown when clicking outside
+  // Also close spotlight window if isSpotlight is true
+  useEffect(() => {
+    if (!searchResults && !showAdvancedSearch && !isSpotlight) return
+    const handleClickOutside = async (event) => {
       if (
         containerRef.current &&
         !containerRef.current.contains(event.target)
       ) {
         setSearchResults(null)
         setShowAdvancedSearch(false)
+        
+        // If this is spotlight mode, hide the spotlight window
+        if (isSpotlight) {
+          try {
+            await invoke('hide_spotlight')
+          } catch (e) {
+            console.error('Error hiding spotlight:', e)
+          }
+        }
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [searchResults, showAdvancedSearch])
+  }, [searchResults, showAdvancedSearch, isSpotlight])
 
   const { templates, setCurrentTemplate, loadVaultItem, setActiveTab } = usePlaygroundStore()
 
   const toast = useToast()
 
-  const PREFIXES = [
-    'template',
-    'vault',
-    'initial-prompt',
-    'refined-prompt',
-    'content',
-  ]
-
-  const isValidQuery = (query) => {
+  const isValidQuery = useCallback((query) => {
     const prefixes = PREFIXES.map((prefix) => `${prefix}:`)
     let remainingQuery = query;
 
@@ -52,7 +99,7 @@ const SemanticSearch = ({ setCurrentView }) => {
     })
 
     return remainingQuery.trim().length > 0
-  }
+  }, [])
 
   const handleAddPrefix = (prefix) => {
     const prefixWithColon = `${prefix}:`
@@ -64,7 +111,7 @@ const SemanticSearch = ({ setCurrentView }) => {
     }
   }
 
-  const handleSearch = async () => {
+  const handleSearch = useCallback(async () => {
     if (!searchQuery.trim()) return
     setIsSearching(true)
     setShowAdvancedSearch(false) // Hide advanced dropdown when showing results
@@ -79,7 +126,7 @@ const SemanticSearch = ({ setCurrentView }) => {
       toast.error('Error during search', 6000)
     }
     setIsSearching(false)
-  }
+  }, [searchQuery, setIsSearching, setShowAdvancedSearch, setSearchResults, toast])
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -88,31 +135,101 @@ const SemanticSearch = ({ setCurrentView }) => {
     }
   }
 
-  const handleSelectTemplate = (result) => {
-    setSearchQuery('')
-    setCurrentTemplate(result)
-    setSearchResults(null)
-    setCurrentView('playground')
-  }
-
-  const handleSelectVaultItem = (result) => {
-    setSearchQuery('')
-    setCurrentTemplate(templates.find(t => t.id === result.templateId))
-    loadVaultItem(result)
-    setCurrentView('playground')
-
-    let activeTab = 'form'
-    if (result.generatedContent) {
-      activeTab = 'content'
-    } else if (result.refinedPrompt) {
-      activeTab = 'refined-prompt'
-    } else if (result.initialPrompt) {
-      activeTab = 'initial-prompt'
+  // Auto-search in spotlight mode when user stops typing
+  useEffect(() => {
+    if (isSpotlight && searchQuery.trim() && isValidQuery(searchQuery)) {
+      const timer = setTimeout(() => {
+        handleSearch()
+      }, 1000) // Wait 1 second after user stops typing
+      
+      return () => clearTimeout(timer)
     }
+  }, [searchQuery, isSpotlight, handleSearch, isValidQuery])
 
-    setActiveTab(activeTab)
+  const handleSelectTemplate = useCallback(async (result) => {
+    setSearchQuery('')
+    
+    // Make sure we have the result object with all properties
+    console.log('Template selected:', result)
+    
+    if (isSpotlight) {
+      try {
+        // Use localStorage as an additional backup to ensure the selection persists
+        localStorage.setItem('lastSelectedTemplate', JSON.stringify(result))
+        const copyResult = await copyToClipboardTauri(result.template);
+        if (!copyResult) {
+          toast.error(`Failed to copy template "${result.name}" to clipboard`, 3000)
+        }  else {
+          toast.success(`Copied template "${result.name}" to clipboard`, 3000)
+        }
+        // Hide spotlight immediately for better UX
+        await invoke('hide_spotlight')
+      } catch (e) {
+        console.error('Error hiding spotlight:', e)
+        toast.error(`Error: ${e.message}`, 3000)
+      }
+    } else {
+      // For main UI, store the template and directly set the view to playground
+      setCurrentTemplate(result)
+      setCurrentView('playground')
+    }
     setSearchResults(null)
-  }
+  }, [isSpotlight, toast, setCurrentTemplate, setCurrentView])
+
+  const handleSelectVaultItem = useCallback(async (prefix, result) => {
+    setSearchQuery('')
+    
+    if (isSpotlight) {
+      try {
+        localStorage.setItem('lastSelectedVaultItem', JSON.stringify(result))
+        let copyResult = false
+        switch (prefix) {
+          case 'content':
+            copyResult = await copyToClipboardTauri(result.generatedContent)
+            break;
+          case 'refined-prompt':
+            copyResult = await copyToClipboardTauri(result.refinedPrompt)
+            break;
+          case 'initial-prompt':
+            copyResult = await copyToClipboardTauri(result.initialPrompt)
+            break;
+          case 'vault':
+            copyResult = await copyToClipboardTauri(result.generatedContent || result.refinedPrompt || result.initialPrompt)
+            break;
+          default:
+            copyResult = await copyToClipboardTauri(result.template)
+            break;
+        } 
+        
+        if (!copyResult) {
+          toast.error(`Failed to copy ${prefix} "${result.name}" to clipboard`, 3000)
+        } else {
+          toast.success(`Copied ${prefix} "${result.name}" to clipboard`, 3000)
+        }
+        // First hide the spotlight window
+        await invoke('hide_spotlight')
+      } catch (e) {
+        console.error('Error hiding spotlight:', e)
+        toast.error(`Error: ${e.message}`, 3000)
+      }
+    } else {
+      setCurrentTemplate(templates.find(t => t.id === result.templateId))
+      loadVaultItem(result)
+      setCurrentView('playground')
+
+      let activeTab = 'form'
+      if (result.generatedContent) {
+        activeTab = 'content'
+      } else if (result.refinedPrompt) {
+        activeTab = 'refined-prompt'
+      } else if (result.initialPrompt) {
+        activeTab = 'initial-prompt'
+      }
+
+      setActiveTab(activeTab)
+    }
+    setSearchResults(null)
+  }, [isSpotlight, toast, templates, setCurrentTemplate, loadVaultItem, setCurrentView, setActiveTab])
 
   const renderRole = (prefix, result) => {
     if (prefix === 'template') {
@@ -235,6 +352,7 @@ const SemanticSearch = ({ setCurrentView }) => {
                                   )
                                 : () => {
                                   handleSelectVaultItem(
+                                    prefix,
                                     result
                                   )
                                 }
@@ -285,13 +403,14 @@ const SemanticSearch = ({ setCurrentView }) => {
 
   return (
     <div
-      className='bg-white border-b border-gray-200 p-4'
+      className={cn('bg-transparent p-4', isSpotlight ? '' : 'border-b border-gray-200')}
       ref={containerRef}
     >
       <div className='max-w-4xl mx-auto'>
         <div className='flex gap-3 relative'>
           <div className='flex-1'>
             <Input
+              ref={inputRef}
               placeholder='Search prompts and templates with natural language...'
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -299,56 +418,58 @@ const SemanticSearch = ({ setCurrentView }) => {
               className='text-base'
             />
           </div>
-          <Button
-            onClick={handleSearch}
-            disabled={isSearching || !isValidQuery(searchQuery)}
-            className='px-6'
-          >
-            {isSearching ? (
-              <div className='flex items-center'>
-                <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2'></div>
-                Searching...
-              </div>
-            ) : (
-              <>
-                <svg
-                  className='w-4 h-4 mr-2'
-                  fill='none'
-                  viewBox='0 0 24 24'
-                  stroke='currentColor'
-                >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'
-                  />
-                </svg>
-                Search
-              </>
-            )}
-          </Button>
-          <Button
-            onClick={() =>
-              setShowAdvancedSearch(!showAdvancedSearch)
-            }
-            className='px-6'
-          >
-            <svg
-              className='w-4 h-4 mr-2'
-              fill='none'
-              viewBox='0 0 24 24'
-              stroke='currentColor'
+          { !isSpotlight && <>
+            <Button
+              onClick={handleSearch}
+              disabled={isSearching || !isValidQuery(searchQuery)}
+              className='px-6'
             >
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707l-6 6V20a1 1 0 01-1 1h-4a1 1 0 01-1-1v-7.293l-6-6A1 1 0 013 6V4z'
-              />
-            </svg>
-            Advanced
-          </Button>
+              {isSearching ? (
+                <div className='flex items-center'>
+                  <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2'></div>
+                  Searching...
+                </div>
+              ) : (
+                <>
+                  <svg
+                    className='w-4 h-4 mr-2'
+                    fill='none'
+                    viewBox='0 0 24 24'
+                    stroke='currentColor'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2}
+                      d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'
+                    />
+                  </svg>
+                  Search
+                </>
+              )}
+            </Button>
+            <Button
+              onClick={() =>
+                setShowAdvancedSearch(!showAdvancedSearch)
+              }
+              className='px-6'
+            >
+              <svg
+                className='w-4 h-4 mr-2'
+                fill='none'
+                viewBox='0 0 24 24'
+                stroke='currentColor'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth={2}
+                  d='M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707l-6 6V20a1 1 0 01-1 1h-4a1 1 0 01-1-1v-7.293l-6-6A1 1 0 013 6V4z'
+                />
+              </svg>
+              Advanced
+            </Button>
+          </>}
           {showAdvancedSearch && (
             <div className='absolute top-full mt-2 bg-white border border-gray-300 rounded shadow-md z-50 w-full p-4'>
               <div className='mb-4 text-xs text-gray-500 text-center'>
@@ -382,16 +503,17 @@ const SemanticSearch = ({ setCurrentView }) => {
         </div>
         {/* Hide advanced dropdown when search results are shown */}
         {!showAdvancedSearch && (isSearching || searchResults) && renderSearchResults()}
-        <div className='mt-2 text-xs text-gray-500'>
+        {!isSpotlight && <div className='mt-2 text-xs text-gray-500'>
           Try searching for &quot;content writing&quot;, &quot;code
           review&quot;, or &quot;email templates&quot;
-        </div>
+        </div>}
       </div>
     </div>
   )
 }
 SemanticSearch.propTypes = {
   setCurrentView: PropTypes.func.isRequired,
+  isSpotlight: PropTypes.bool,
 }
 
 export default SemanticSearch

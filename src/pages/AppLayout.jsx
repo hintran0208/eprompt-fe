@@ -1,14 +1,149 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import SemanticSearch from '../components/SemanticSearch';
 import TemplateLibrary from '../components/TemplateLibrary';
 import Playground from '../components/Playground';
 import PromptVault from '../components/PromptVault';
 import { usePlaygroundStore } from '../store/playgroundStore';
 import { Button } from '../components/ui';
+import { listen } from '@tauri-apps/api/event';
+// import { invoke } from '@tauri-apps/api/core';
 
 const AppLayout = () => {
   const [currentView, setCurrentView] = useState('templates');
-  const { currentTemplate, clearCurrentSession } = usePlaygroundStore();
+  const { currentTemplate, setCurrentTemplate, clearCurrentSession, loadVaultItem, setActiveTab, templates } = usePlaygroundStore();
+  
+  // Create a stable callback function that won't change between renders
+  const handleTemplateFromStore = useCallback((template, vaultItem) => {
+    if (!currentTemplate) {
+      clearCurrentSession();
+      setCurrentTemplate(template);
+      if (vaultItem) {
+        console.log('Loading vault item:', vaultItem);
+        loadVaultItem(vaultItem);
+      }
+    }
+  }, [currentTemplate, clearCurrentSession, setCurrentTemplate, loadVaultItem]);
+
+  // Listen for spotlight-hidden event
+  useEffect(() => {
+
+    const setupListener = async () => {
+      const unlisten = await listen('spotlight-hidden', async () => {
+        console.log('Spotlight hidden event received in main app');
+        
+        // First, ensure main window exists and try to activate the app
+        // try {
+        //   console.log('Ensuring main window exists...');
+        //   await invoke('ensure_main_window');
+        //   console.log('Main window ensured');
+          
+        //   console.log('Attempting to activate app...');
+        //   await invoke('activate_app');
+        //   console.log('App activation command completed');
+        // } catch (e) {
+        //   console.error('Error activating app:', e);
+        // }
+        
+        // Add a longer delay to ensure the main window is fully loaded before processing
+        // This is especially important when the main window was just recreated
+        const processTemplate = () => {
+          console.log('Processing spotlight selection...');
+          // Check if we have a template from localStorage as a backup
+          try {
+            const savedTemplate = localStorage.getItem('lastSelectedTemplate');
+            const savedVaultItem = localStorage.getItem('lastSelectedVaultItem');
+            
+            if (savedTemplate) {
+              const parsedTemplate = JSON.parse(savedTemplate);
+              console.log('Loading template from spotlight:', parsedTemplate);
+              
+              // Use the stored function to handle template
+              handleTemplateFromStore(parsedTemplate);
+              
+              // Remove from localStorage to avoid using it again
+              localStorage.removeItem('lastSelectedTemplate');
+
+              // When spotlight is hidden after template selection, switch to playground view
+              setCurrentView('playground');
+            }
+            if (savedVaultItem) {
+              const parsedVaultItem = JSON.parse(savedVaultItem);
+              console.log('Loading vault item from spotlight:', parsedVaultItem);
+              
+              // Check if templates are loaded yet
+              if (!templates || templates.length === 0) {
+                console.log('Templates not loaded yet, waiting...');
+                // If templates aren't loaded, wait a bit more and try again
+                setTimeout(() => {
+                  const retryTemplate = templates.find(t => t.id === parsedVaultItem.templateId);
+                  if (retryTemplate) {
+                    console.log('Templates loaded on retry, processing vault item');
+                    handleTemplateFromStore(retryTemplate, parsedVaultItem);
+                    setCurrentView('playground');
+                    
+                    let activeTab = 'form'
+                    if (parsedVaultItem.generatedContent) {
+                      activeTab = 'content';
+                    } else if (parsedVaultItem.refinedPrompt) {
+                      activeTab = 'refined-prompt';
+                    } else if (parsedVaultItem.initialPrompt) {
+                      activeTab = 'initial-prompt';
+                    }
+                    setActiveTab(activeTab);
+                  } else {
+                    console.error('Template not found even after retry:', parsedVaultItem.templateId);
+                  }
+                  // Remove from localStorage after processing (success or failure)
+                  localStorage.removeItem('lastSelectedVaultItem');
+                }, 1000); // Wait 1 more second for templates to load
+                return; // Exit early, will be handled by the retry
+              }
+              
+              const curTemplate = templates.find(t => t.id === parsedVaultItem.templateId);
+              if (!curTemplate) {
+                console.error('Template not found for vault item:', parsedVaultItem.templateId);
+                localStorage.removeItem('lastSelectedVaultItem');
+                return;
+              }
+              
+              handleTemplateFromStore(curTemplate, parsedVaultItem);
+              
+              // Remove from localStorage to avoid using it again
+              localStorage.removeItem('lastSelectedVaultItem');
+
+              setCurrentView('playground');
+
+              let activeTab = 'form'
+              if (parsedVaultItem.generatedContent) {
+                activeTab = 'content';
+              } else if (parsedVaultItem.refinedPrompt) {
+                activeTab = 'refined-prompt';
+              } else if (parsedVaultItem.initialPrompt) {
+                activeTab = 'initial-prompt';
+              }
+
+              setActiveTab(activeTab);
+            }
+          } catch (e) {
+            console.error('Error retrieving template from localStorage:', e);
+          }
+        };
+        
+        // Check if window is ready, if not wait a bit more
+        if (document.readyState === 'complete') {
+          setTimeout(processTemplate, 500);
+        } else {
+          setTimeout(processTemplate, 1000); // Extra time if document isn't fully ready
+        }
+      });
+      
+      return () => {
+        unlisten();
+      };
+    };
+    
+    setupListener();
+  }, [handleTemplateFromStore, setActiveTab, templates]);
 
   const handleNewSession = () => {
     clearCurrentSession();
