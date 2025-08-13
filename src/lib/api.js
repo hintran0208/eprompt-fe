@@ -146,3 +146,8 @@ export async function getVaultItemsByUserId(id) {
   const response = await apiCall(`/vault/user/${id}`);
   return response;
 }
+
+export async function getTrendingPrompts(timeFilter = 'daily', category = 'all') {
+  const response = await apiCall(`/prompts/trending?period=${timeFilter}&category=${category}`);
+  return response || [];
+}

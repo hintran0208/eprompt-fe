@@ -16,6 +16,12 @@ const Sidebar = () => {
       count: null,
     },
     {
+      label: "Trending",
+      path: "/trending",
+      icon: "🔥",
+      count: null,
+    },
+    {
       label: "Favorites",
       path: "/prompts?filter=favorites",
       icon: "⭐",
