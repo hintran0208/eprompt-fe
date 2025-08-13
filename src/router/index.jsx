@@ -5,6 +5,7 @@ import HomePage from "../pages/HomePage";
 import PromptsPage from "../pages/PromptsPage";
 import SettingsPage from "../pages/SettingsPage";
 import AppLayout from "../pages/AppLayout";
+import TrendingPrompts from "../components/TrendingPrompts";
 
 const router = createBrowserRouter([
   {
@@ -28,6 +29,16 @@ const router = createBrowserRouter([
       {
         index: true,
         element: <PromptsPage />,
+      },
+    ],
+  },
+  {
+    path: "/trending",
+    element: <Layout />,
+    children: [
+      {
+        index: true,
+        element: <TrendingPrompts />,
       },
     ],
   },
